@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/jetnoli/notion-voice-assistant/config"
@@ -54,4 +55,53 @@ func GetDatabaseById[T any](id string) (data T, err error) {
 	json.NewDecoder(res.Body).Decode(&data)
 
 	return data, err
+}
+
+type ItemData struct {
+	Title  string
+	Status string
+}
+
+func CreateDatabaseItem[R any](databaseId string, itemData *ItemData) (item *R, err error) {
+	reqStr := fmt.Sprintf(`{
+		"parent": {
+			"database_id": "%s"
+		},
+		"icon": {
+			"emoji": "🥬"
+		},
+		"properties": {
+			"Name": {
+				"title": [
+					{
+						"text": {
+							"content": "%s"
+						}
+					}
+				]
+			},
+			"Tags": {
+				"multi_select": [
+					{
+						"name": "Workout"
+					}
+				]
+			}
+
+		}
+	}`, databaseId, itemData.Title)
+
+	fmt.Println(reqStr)
+
+	body := []byte(reqStr)
+
+	res, err := notionApi.Post("/pages", body, wrappers.ApiPostRequestOptions{})
+
+	if err != nil {
+		return item, err
+	}
+
+	json.NewDecoder(res.Body).Decode(&item)
+
+	return item, nil
 }

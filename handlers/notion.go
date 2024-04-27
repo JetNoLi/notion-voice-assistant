@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/jetnoli/notion-voice-assistant/config"
 	"github.com/jetnoli/notion-voice-assistant/services"
 )
 
@@ -40,7 +41,21 @@ func GetDatabaseById(w http.ResponseWriter, r *http.Request) {
 
 }
 
+type DatabaseEntry struct {
+	title  string
+	status string
+}
+
 func CreateTask(w http.ResponseWriter, r *http.Request) {
-	// Connect to Correct Notion Workspace
-	// Create Struct to Add Task
+	databaseId := config.NotionMainDbId
+
+	data, err := services.CreateDatabaseItem[any](databaseId, &services.ItemData{Title: "Planning 101", Status: "Planning"})
+
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	json.NewEncoder(w).Encode(data)
 }
