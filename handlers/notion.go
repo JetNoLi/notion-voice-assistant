@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/jetnoli/notion-voice-assistant/config"
 	"github.com/jetnoli/notion-voice-assistant/wrappers"
 )
 
@@ -18,7 +19,7 @@ var notionApi = wrappers.Api{
 	Client:  &http.Client{},
 	Headers: map[string]string{
 		"Content-Type":   "application/json",
-		"Authorization":  "",
+		"Authorization":  "Bearer " + config.NotionApiKey,
 		"Notion-Version": "2022-06-28",
 	},
 }
@@ -45,7 +46,10 @@ func GetDatabases(w http.ResponseWriter, r *http.Request) {
 
 	defer res.Body.Close()
 
-	json.NewEncoder(w).Encode(res.Body)
+	data := &NotionDatabase{}
+	json.NewDecoder(res.Body).Decode(&data)
+
+	json.NewEncoder(w).Encode(data)
 }
 
 func GetDatabaseById(w http.ResponseWriter, r *http.Request) {
@@ -61,10 +65,14 @@ func GetDatabaseById(w http.ResponseWriter, r *http.Request) {
 
 	defer res.Body.Close()
 
-	json.NewEncoder(w).Encode(res.Body)
+	var data any
+	json.NewDecoder(res.Body).Decode(&data)
+
+	json.NewEncoder(w).Encode(data)
 
 }
 
 func CreateTask(w http.ResponseWriter, r *http.Request) {
-
+	// Connect to Correct Notion Workspace
+	// Create Struct to Add Task
 }

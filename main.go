@@ -13,7 +13,6 @@ import (
 var port string = "8080"
 
 func main() {
-
 	router := http.NewServeMux()
 
 	router.Handle("/notion/", routes.NotionRouter())

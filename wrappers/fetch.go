@@ -49,7 +49,6 @@ func (client Api) Get(url string, options ApiGetRequestOptions) (*http.Response,
 }
 
 func (client Api) Post(url string, rawBody []byte, options ApiPostRequestOptions) (*http.Response, error) {
-
 	body := bytes.NewBuffer(rawBody)
 
 	req, err := http.NewRequest("POST", client.BaseUrl+url, body)

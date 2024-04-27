@@ -1,7 +1,6 @@
 package wrappers
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -43,9 +42,7 @@ func (router Router) CreatePath(path string, method string) string {
 }
 
 func (router Router) Get(path string, handler http.HandlerFunc) {
-	fmt.Println("Registering Route: ")
 	route := router.CreatePath(path, "GET")
-	fmt.Println(route)
 	router.Mux.HandleFunc(route, handler)
 }
 
