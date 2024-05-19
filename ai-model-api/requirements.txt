@@ -1,0 +1,10 @@
+setuptools-rust
+python-multipart
+# transformers    
+# accelerate
+# huggingface_hub 
+# sentencepiece 
+# llama-cpp-python
+# torch
+# tensorflow
+# flax

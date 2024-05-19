@@ -58,8 +58,13 @@ func GetDatabaseById[T any](id string) (data T, err error) {
 }
 
 type ItemData struct {
-	Title  string
-	Status string
+	Title       string
+	StartDate   string //TODO: Look into Go Dates
+	Status      string
+	Tags        []string
+	Project     string
+	Category    string
+	SubCategory string
 }
 
 func CreateDatabaseItem[R any](databaseId string, itemData *ItemData) (item *R, err error) {
