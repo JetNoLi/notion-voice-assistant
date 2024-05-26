@@ -3,21 +3,10 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 
-	"github.com/jetnoli/notion-voice-assistant/config"
+	"github.com/jetnoli/notion-voice-assistant/config/client"
 	"github.com/jetnoli/notion-voice-assistant/wrappers"
 )
-
-var notionApi = wrappers.Api{
-	BaseUrl: "https://api.notion.com/v1",
-	Client:  &http.Client{},
-	Headers: map[string]string{
-		"Content-Type":   "application/json",
-		"Authorization":  "Bearer " + config.NotionApiKey,
-		"Notion-Version": "2022-06-28",
-	},
-}
 
 func GetDatabases[T any]() (data T, err error) {
 	body := []byte(`{
@@ -31,7 +20,7 @@ func GetDatabases[T any]() (data T, err error) {
     	}
 	}`)
 
-	res, err := notionApi.Post("/search", body, wrappers.ApiPostRequestOptions{})
+	res, err := client.NotionApi.Post("/search", body, wrappers.ApiPostRequestOptions{})
 
 	if err != nil {
 		return data, err
@@ -44,7 +33,7 @@ func GetDatabases[T any]() (data T, err error) {
 }
 
 func GetDatabaseById[T any](id string) (data T, err error) {
-	res, err := notionApi.Get("/databases/"+id, wrappers.ApiGetRequestOptions{})
+	res, err := client.NotionApi.Get("/databases/"+id, wrappers.ApiGetRequestOptions{})
 
 	if err != nil {
 		return data, err
@@ -100,7 +89,7 @@ func CreateDatabaseItem[R any](databaseId string, itemData *ItemData) (item *R, 
 
 	body := []byte(reqStr)
 
-	res, err := notionApi.Post("/pages", body, wrappers.ApiPostRequestOptions{})
+	res, err := client.NotionApi.Post("/pages", body, wrappers.ApiPostRequestOptions{})
 
 	if err != nil {
 		return item, err

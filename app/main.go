@@ -16,6 +16,7 @@ func main() {
 	router := http.NewServeMux()
 
 	router.Handle("/notion/", routes.NotionRouter())
+	router.Handle("/completion/", routes.GptRouter())
 	router.HandleFunc("GET /{$}", handlers.HealthCheck)
 
 	server := http.Server{

@@ -5,20 +5,14 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/jetnoli/notion-voice-assistant/config"
+	"github.com/jetnoli/notion-voice-assistant/config/client"
 	"github.com/jetnoli/notion-voice-assistant/wrappers"
 )
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	var whisperApi = wrappers.Api{
-		BaseUrl: config.WhisperApiUrl,
-		Client:  &http.Client{},
-		Headers: map[string]string{},
-	}
-
-	res, err := whisperApi.Get("/", wrappers.ApiGetRequestOptions{})
+	res, err := client.WhisperApi.Get("/", wrappers.ApiGetRequestOptions{})
 
 	if err != nil {
 		fmt.Println(err)

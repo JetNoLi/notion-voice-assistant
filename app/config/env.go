@@ -34,3 +34,5 @@ var config map[string]string = ReadEnv()
 var NotionApiKey string = config["NOTION_API_KEY"]
 var NotionMainDbId string = config["NOTION_MAIN_DB_ID"]
 var WhisperApiUrl string = config["WHISPER_API_URL"]
+var OpenAiApiUrl string = config["OPEN_AI_API_URL"]
+var OpenAiApiKey string = config["OPEN_AI_API_KEY"]
