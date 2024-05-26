@@ -9,11 +9,10 @@ import (
 )
 
 type AssistRequestBody struct {
-	prompt string
+	Prompt string `json:"prompt"`
 }
 
 func Assist(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("entering assist")
 	defer r.Body.Close()
 
 	var reqBody AssistRequestBody
@@ -27,7 +26,7 @@ func Assist(w http.ResponseWriter, r *http.Request) {
 		}`, err.Error())))
 	}
 
-	res, err := services.Assist(reqBody.prompt)
+	res, err := services.Assist(reqBody.Prompt)
 
 	if err != nil {
 		w.WriteHeader(500)
