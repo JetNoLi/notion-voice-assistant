@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/jetnoli/notion-voice-assistant/config/client"
@@ -22,11 +21,5 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 
 	defer res.Body.Close()
 
-	data, err := io.ReadAll(res.Body)
-
-	if err != nil {
-		w.WriteHeader(500)
-	}
-
-	w.Write(data)
+	w.Write([]byte(`<span id="health-check-indicator">&#10003;</span>`))
 }
