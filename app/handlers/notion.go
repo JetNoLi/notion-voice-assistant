@@ -9,8 +9,8 @@ import (
 )
 
 type NotionDatabase struct {
-	Object  string `json:object`
-	Results any    `json:name`
+	Object  string `json:"object"`
+	Results any    `json:"name"`
 }
 
 func GetDatabases(w http.ResponseWriter, r *http.Request) {

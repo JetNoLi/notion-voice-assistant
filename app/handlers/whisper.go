@@ -11,6 +11,16 @@ import (
 	"github.com/jetnoli/notion-voice-assistant/config/client"
 )
 
+//TODO:
+// - Respond Correctly
+// - Work With the Service
+// - Cleanup Code
+
+type TranscriptionResponse struct {
+	Message string `json:"message"`
+	Result  string `json:"result"`
+}
+
 func Transcribe(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -30,11 +40,12 @@ func Transcribe(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	// Create a buffer to write the multipart form data
-	var b bytes.Buffer
-	writer := multipart.NewWriter(&b)
+	var multiPartFileBuffer bytes.Buffer
+	writer := multipart.NewWriter(&multiPartFileBuffer)
 
 	// Create a form file field and copy the file content to it
 	part, err := writer.CreateFormFile("file", handler.Filename)
+
 	if err != nil {
 		http.Error(w, "Error creating form file", http.StatusInternalServerError)
 		return
@@ -52,7 +63,7 @@ func Transcribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := http.NewRequest("POST", client.WhisperApi.BaseUrl+"/transcribe/", &b)
+	req, err := http.NewRequest("POST", client.WhisperApi.BaseUrl+"/transcribe/", &multiPartFileBuffer)
 
 	if err != nil {
 		w.WriteHeader(400)
@@ -62,10 +73,6 @@ func Transcribe(w http.ResponseWriter, r *http.Request) {
 		}`, err.Error())))
 		return
 	}
-
-	// Set the appropriate headers
-	// req.Header.Set("Content-Type", handler.Header.Get("Content-Type"))
-	// req.Header.Set("Content-Disposition", "form-data; name=\"file\"; filename=\""+handler.Filename+"\"")
 
 	// Set the Content-Type header to multipart/form-data with the boundary
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -81,37 +88,7 @@ func Transcribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// splitFile := strings.Split(handler.Filename, ".")
-	// fileType := splitFile[len(splitFile)-1]
-
-	// tempFile, err := os.CreateTemp("audio", "nva-audio-*."+fileType)
-
-	// if err != nil {
-	// 	w.WriteHeader(400)
-	// 	w.Write([]byte(fmt.Sprintf(`{
-	// 		"title":"cannot parse audio file",
-	// 		"message": "%s"
-	// 	}`, err.Error())))
-	// 	return
-	// }
-
-	// fileBytes, err := io.ReadAll(tempFile) //TODO: Try and pass just the file?
-
-	// if err != nil {
-	// 	w.WriteHeader(400)
-	// 	w.Write([]byte(fmt.Sprintf(`{
-	// 		"title":"cannot parse audio file",
-	// 		"message": "%s"
-	// 	}`, err.Error())))
-	// 	return
-	// }
-
-	// // write this byte array to our temporary file
-	// tempFile.Write(fileBytes)
-
 	defer res.Body.Close()
-
-	strBody, err := io.ReadAll(res.Body)
 
 	if err != nil {
 
@@ -123,9 +100,7 @@ func Transcribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(string(strBody))
-
-	var data any
+	var data TranscriptionResponse
 
 	err = json.NewDecoder(res.Body).Decode(&data)
 
@@ -134,8 +109,9 @@ func Transcribe(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		w.Write([]byte(fmt.Sprintf(`{
 			"title":"cannot decode transcription",
+			"data":"%s",
 			"message": "%s"
-			}`, err.Error())))
+			}`, string(data.Message), err.Error())))
 		return
 	}
 
@@ -150,9 +126,4 @@ func Transcribe(w http.ResponseWriter, r *http.Request) {
 			}`, err.Error())))
 		return
 	}
-
-	w.Write([]byte(`{
-		"message": "File Successfully Written"
-	}`))
-
 }
