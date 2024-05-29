@@ -39,7 +39,16 @@ func (router Router) CreatePath(path string, method string) string {
 		}
 	}
 
-	return method + " " + router.Path + path + pathEndString
+	url := method + " " + router.Path
+
+	// To avoid double // in request e.g. GET //path-name
+	if router.Path[len(router.Path)-1] == '/' && path[0] == '/' {
+		url += path[1:]
+	} else {
+		url += path
+	}
+
+	return url + pathEndString
 }
 
 func (router Router) Get(path string, handler http.HandlerFunc) {
