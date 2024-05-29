@@ -21,7 +21,11 @@ func ReadEnv() map[string]string {
 	envVars := make(map[string]string)
 
 	for _, line := range envFileLines {
-		lineValues := strings.Split(string(line), "=")
+		// Ignore Comments
+		if line[0] == '#' {
+			continue
+		}
+		lineValues := strings.Split(line, "=")
 		key, value := lineValues[0], lineValues[1]
 		envVars[key] = value
 	}
@@ -36,3 +40,4 @@ var NotionMainDbId string = config["NOTION_MAIN_DB_ID"]
 var WhisperApiUrl string = config["WHISPER_API_URL"]
 var OpenAiApiUrl string = config["OPEN_AI_API_URL"]
 var OpenAiApiKey string = config["OPEN_AI_API_KEY"]
+var Port string = config["PORT"]
