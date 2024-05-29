@@ -17,6 +17,7 @@ func main() {
 
 	router.Handle("/notion/", routes.NotionRouter())
 	router.Handle("/completion/", routes.GptRouter())
+	router.Handle("/transcribe/", routes.WhisperRouter())
 	router.HandleFunc("GET /{$}", handlers.HealthCheck)
 
 	server := http.Server{

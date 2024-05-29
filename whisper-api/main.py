@@ -12,7 +12,7 @@ async def root():
     return "Hello World!"
 
 
-@app.post("/files/")
+@app.post("/transcribe/")
 async def create_file(file: UploadFile):
 
     # TODO: Investigate how to process without saving
