@@ -1,15 +1,15 @@
 services:
-  notion-voice-assistant:
+  notion_voice_assistant:
     build:
       context: ./app
     depends_on:
-      - whisper-api 
+      - whisper_api 
     ports:
       - 3000:8080
     networks:
       - frontend
       - backend
-  whisper-api:
+  whisper_api:
     build:
       context: ./whisper-api
     ports:
