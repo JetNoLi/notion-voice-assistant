@@ -14,6 +14,7 @@ type Router struct {
 	Options RouterOptions
 }
 
+// TODO: Add Global Response Headers
 func CreateRouter(path string, options RouterOptions) *Router {
 	router := &Router{}
 	router.Mux = http.NewServeMux()

@@ -1,0 +1,98 @@
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+
+access_token = "" # Hugging Face Token
+text_gen = pipeline("text-generation", model="meta-llama/Meta-Llama-Guard-2-8B", token=access_token)
+
+def use_llama(prompt, max_length):
+
+            
+    # Create the model and tokenizer
+    # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-80b-chat-hf")
+    # gpt_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-70b-chat-hf")
+
+    # Create the pipeline
+
+
+    # text_gen = pipeline(
+    #     "text-generation",
+    #     model="meta-llama/Llama-2-70b-chat-hf",
+    #     token=access_token,
+    #     # tokenizer=tokenizer,
+    #     torch_dtype=torch.float16,
+    #     device_map="auto",)
+    
+    # Run the model
+    sequences = text_gen(
+        prompt,
+        do_sample=True,
+        top_k=10,
+        num_return_sequences=1,
+        # eos_token_id=tokenizer.eos_token_id,
+        max_length=max_length,
+    )
+    
+    return sequences
+
+    
+#DOCKER FILE BELOW
+
+# from ubuntu:20.04 as base
+from python:3.10 as base
+
+WORKDIR /app
+
+COPY main.py .
+COPY run.py .
+COPY requirements.txt .
+
+RUN echo "starting install"
+
+RUN apt update -y
+
+RUN apt install ffmpeg -y
+
+# RUN apt-get install git-lfs
+
+# RUN git lfs install
+
+RUN apt-get install -y gcc g++ procps
+
+RUN apt-get update && apt-get install -y libhdf5-dev
+
+# clone the repo
+# RUN apt install python3.9 -y
+
+# RUN apt-get install python3-pip -y
+
+# RUN apt install git -y
+
+# RUN pip install setuptools-rust
+
+
+# RUN pip install python-multipart
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install git+https://github.com/openai/whisper.git 
+RUN pip install fastapi
+# RUN pip install versioned-hdf5
+
+RUN pip install transformers torch tensorflow 
+# RUN pip install nvidia-pyindex nvidia-tensorrt
+# RUN pip install 
+
+RUN pip install -r requirements.txt
+
+EXPOSE 8000
+
+# ENTRYPOINT ["fastapi", "run", "main.py", "--bind", "0.0.0.0:8000"]
+ENTRYPOINT [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000" ]
+
+#REQUIREMENTS
+# transformers    
+# accelerate
+# huggingface_hub 
+# sentencepiece 
+# llama-cpp-python
+# torch
+# tensorflow
+# flax

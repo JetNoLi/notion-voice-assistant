@@ -2,7 +2,9 @@ FROM golang:1.22 as builder
 
 WORKDIR /app
 
-COPY . .
+COPY .  .
+
+COPY ./.env /app/
 
 RUN go build -o notion-voice-assistant.exe
 
@@ -10,7 +12,8 @@ FROM golang:1.22 as runner
 
 WORKDIR /app
 
-COPY --from=builder "app/notion-voice-assistant.exe" "/app"
+COPY --from=builder app/notion-voice-assistant.exe /app
+COPY --from=builder app/.env /app/
 
 EXPOSE 8080
 
