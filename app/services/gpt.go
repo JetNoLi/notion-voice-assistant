@@ -10,8 +10,6 @@ import (
 
 func Assist(prompt string) (string, error) {
 
-	fmt.Printf("This is the prompt:  %s", prompt)
-
 	body := []byte(fmt.Sprintf(`{
 		"model": "gpt-3.5-turbo-16k",
 		"max_tokens": 45,

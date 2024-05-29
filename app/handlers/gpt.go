@@ -26,7 +26,7 @@ func Assist(w http.ResponseWriter, r *http.Request) {
 		}`, err.Error())))
 	}
 
-	res, err := services.Assist(reqBody.Prompt)
+	data, err := services.Assist(reqBody.Prompt)
 
 	if err != nil {
 		w.WriteHeader(500)
@@ -36,7 +36,7 @@ func Assist(w http.ResponseWriter, r *http.Request) {
 		}`, err.Error())))
 	}
 
-	w.Write([]byte(fmt.Sprintf(`{
-		"response": "%s"
-	}`, res)))
+	w.Header().Add("Content-Type", "application/json")
+
+	w.Write([]byte(data))
 }

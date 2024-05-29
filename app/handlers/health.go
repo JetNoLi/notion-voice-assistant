@@ -28,6 +28,5 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 	}
 
-	w.WriteHeader(200)
 	w.Write(data)
 }

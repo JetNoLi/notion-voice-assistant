@@ -23,6 +23,7 @@ func GetDatabases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
 }
 
@@ -37,13 +38,9 @@ func GetDatabaseById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
 
-}
-
-type DatabaseEntry struct {
-	title  string
-	status string
 }
 
 func CreateTask(w http.ResponseWriter, r *http.Request) {
@@ -57,5 +54,6 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
 }
