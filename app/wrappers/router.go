@@ -1,6 +1,7 @@
 package wrappers
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -47,6 +48,8 @@ func (router Router) CreatePath(path string, method string) string {
 	} else {
 		url += path
 	}
+
+	fmt.Println("Registering: " + url + pathEndString)
 
 	return url + pathEndString
 }

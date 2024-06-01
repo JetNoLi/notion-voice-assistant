@@ -5,17 +5,27 @@ services:
     depends_on:
       - whisper_api 
     ports:
-      - 3000:8080
+      - 3000:3000
     networks:
-      - frontend
-      - backend
+      - app
+      - ai
   whisper_api:
     build:
       context: ./whisper-api
     ports:
       - 8000:8000 
     networks:
-    - backend
+    - ai
+  db: 
+    image: postgres:16.3
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    ports: 
+     - 5432:5432
+    networks:
+      - app
 networks:
-  backend:
-  frontend:
+  ai:
+  app:
