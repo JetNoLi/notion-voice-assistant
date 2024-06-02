@@ -1,8 +1,13 @@
-package wrappers
+package router
 
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
 )
 
 type RouterOptions struct {
@@ -86,4 +91,61 @@ func (router Router) Put(path string, handler http.HandlerFunc) {
 func (router Router) Patch(path string, handler http.HandlerFunc) {
 	route := router.CreatePath(path, "PATCH")
 	router.HandleFunc(route, handler)
+}
+
+// Templating
+
+// Serve html at the given filepath relative to app
+func (router Router) Serve(path string, filePath string) {
+	route := router.CreatePath(path, "GET")
+
+	router.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		html, err := serve.Html(filePath)
+
+		if err != nil {
+			http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(html)
+	})
+}
+
+// Serves all html in given directory relative to app
+// Ignores nested directories
+// Include trailing slash in dir name
+func (router Router) ServeDir(baseUrlPath string, dirPath string) {
+	// filePathHtmlMap, err := html.ServeDir(dirPath)
+	absPath, err := filepath.Abs(dirPath)
+
+	fmt.Println("absPath is " + absPath)
+
+	if err != nil {
+		panic("error reading dir: " + err.Error())
+	}
+
+	files, err := os.ReadDir(absPath)
+
+	if err != nil {
+		panic("failed to read dir for html pages: " + err.Error())
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		fileName := file.Name()
+		filePath := absPath + "/" + fileName
+
+		route := baseUrlPath + strings.Split(fileName, ".")[0] + "/"
+
+		if route == "/index/" {
+			route = "/"
+		}
+
+		router.Serve(route, filePath)
+	}
 }

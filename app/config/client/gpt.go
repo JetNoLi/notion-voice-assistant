@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/jetnoli/notion-voice-assistant/config"
-	"github.com/jetnoli/notion-voice-assistant/wrappers"
+	"github.com/jetnoli/notion-voice-assistant/wrappers/fetch"
 )
 
-var OpenAiApi = wrappers.Api{
+var OpenAiApi = fetch.Api{
 	BaseUrl: config.OpenAiApiUrl + "/v1",
 	Client:  &http.Client{},
 	Headers: map[string]string{
