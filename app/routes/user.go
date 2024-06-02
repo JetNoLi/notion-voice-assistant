@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/jetnoli/notion-voice-assistant/handlers"
-	"github.com/jetnoli/notion-voice-assistant/wrappers"
+	"github.com/jetnoli/notion-voice-assistant/wrappers/router"
 )
 
 func UserRouter() *http.ServeMux {
-	router := wrappers.CreateRouter("/user", wrappers.RouterOptions{
+	router := router.CreateRouter("/user", router.RouterOptions{
 		ExactPathsOnly: false,
 	})
 

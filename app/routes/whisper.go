@@ -4,12 +4,12 @@ import (
 	"net/http"
 
 	"github.com/jetnoli/notion-voice-assistant/handlers"
-	"github.com/jetnoli/notion-voice-assistant/wrappers"
+	"github.com/jetnoli/notion-voice-assistant/wrappers/router"
 )
 
 func WhisperRouter() *http.ServeMux {
 
-	router := wrappers.CreateRouter("/transcribe", wrappers.RouterOptions{ExactPathsOnly: true})
+	router := router.CreateRouter("/transcribe", router.RouterOptions{ExactPathsOnly: true})
 
 	router.Post("/", handlers.Transcribe)
 

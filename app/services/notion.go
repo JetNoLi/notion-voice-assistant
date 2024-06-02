@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jetnoli/notion-voice-assistant/config/client"
-	"github.com/jetnoli/notion-voice-assistant/wrappers"
+	"github.com/jetnoli/notion-voice-assistant/wrappers/fetch"
 )
 
 func GetDatabases[T any]() (data T, err error) {
@@ -20,7 +20,7 @@ func GetDatabases[T any]() (data T, err error) {
     	}
 	}`)
 
-	res, err := client.NotionApi.Post("/search", body, wrappers.ApiPostRequestOptions{})
+	res, err := client.NotionApi.Post("/search", body, fetch.ApiPostRequestOptions{})
 
 	if err != nil {
 		return data, err
@@ -33,7 +33,7 @@ func GetDatabases[T any]() (data T, err error) {
 }
 
 func GetDatabaseById[T any](id string) (data T, err error) {
-	res, err := client.NotionApi.Get("/databases/"+id, wrappers.ApiGetRequestOptions{})
+	res, err := client.NotionApi.Get("/databases/"+id, fetch.ApiGetRequestOptions{})
 
 	if err != nil {
 		return data, err
@@ -89,7 +89,7 @@ func CreateDatabaseItem[R any](databaseId string, itemData *ItemData) (item *R, 
 
 	body := []byte(reqStr)
 
-	res, err := client.NotionApi.Post("/pages", body, wrappers.ApiPostRequestOptions{})
+	res, err := client.NotionApi.Post("/pages", body, fetch.ApiPostRequestOptions{})
 
 	if err != nil {
 		return item, err

@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/jetnoli/notion-voice-assistant/config/client"
-	"github.com/jetnoli/notion-voice-assistant/wrappers"
+	"github.com/jetnoli/notion-voice-assistant/wrappers/fetch"
 )
 
 func Assist(prompt string) (string, error) {
@@ -21,7 +21,7 @@ func Assist(prompt string) (string, error) {
 		]
 	}`, prompt))
 
-	res, err := client.OpenAiApi.Post("/chat/completions", body, wrappers.ApiPostRequestOptions{})
+	res, err := client.OpenAiApi.Post("/chat/completions", body, fetch.ApiPostRequestOptions{})
 
 	if err != nil {
 		return "", err

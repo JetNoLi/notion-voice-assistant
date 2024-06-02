@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/jetnoli/notion-voice-assistant/config"
-	"github.com/jetnoli/notion-voice-assistant/wrappers"
+	"github.com/jetnoli/notion-voice-assistant/wrappers/fetch"
 )
 
-var NotionApi = wrappers.Api{
+var NotionApi = fetch.Api{
 	BaseUrl: "https://api.notion.com/v1",
 	Client:  &http.Client{},
 	Headers: map[string]string{
