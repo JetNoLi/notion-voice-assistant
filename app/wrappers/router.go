@@ -54,27 +54,36 @@ func (router Router) CreatePath(path string, method string) string {
 	return url + pathEndString
 }
 
+// Adds Basic Logging to handler
+func (router Router) HandleFunc(path string, handler http.HandlerFunc) {
+	router.Mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Starting Request: " + path)
+		handler(w, r)
+		fmt.Println("Completing Request: " + path)
+	})
+}
+
 func (router Router) Get(path string, handler http.HandlerFunc) {
 	route := router.CreatePath(path, "GET")
-	router.Mux.HandleFunc(route, handler)
+	router.HandleFunc(route, handler)
 }
 
 func (router Router) Post(path string, handler http.HandlerFunc) {
 	route := router.CreatePath(path, "POST")
-	router.Mux.HandleFunc(route, handler)
+	router.HandleFunc(route, handler)
 }
 
 func (router Router) Delete(path string, handler http.HandlerFunc) {
 	route := router.CreatePath(path, "DELETE")
-	router.Mux.HandleFunc(route, handler)
+	router.HandleFunc(route, handler)
 }
 
 func (router Router) Put(path string, handler http.HandlerFunc) {
 	route := router.CreatePath(path, "PUT")
-	router.Mux.HandleFunc(route, handler)
+	router.HandleFunc(route, handler)
 }
 
 func (router Router) Patch(path string, handler http.HandlerFunc) {
 	route := router.CreatePath(path, "PATCH")
-	router.Mux.HandleFunc(route, handler)
+	router.HandleFunc(route, handler)
 }

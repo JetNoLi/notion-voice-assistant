@@ -1,9 +1,11 @@
 TODO: Add Readme 
 
 * Replace All Inline Int Error Codes with http Enum
-* Add Ids
+* Cleanup Unnessary Returns and ifs
+* All Errors should be Lowercase
 
 * Improve Env Var Handling
+* Figure out best way to pass status code down to handlers from services
 * Figure out how context works with the DB
 * Look at Implementing a Generic Type - With Count
 * Add Versioning
