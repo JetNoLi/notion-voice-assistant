@@ -117,10 +117,7 @@ func (router Router) Serve(path string, filePath string) {
 // Ignores nested directories
 // Include trailing slash in dir name
 func (router Router) ServeDir(baseUrlPath string, dirPath string) {
-	// filePathHtmlMap, err := html.ServeDir(dirPath)
 	absPath, err := filepath.Abs(dirPath)
-
-	fmt.Println("absPath is " + absPath)
 
 	if err != nil {
 		panic("error reading dir: " + err.Error())

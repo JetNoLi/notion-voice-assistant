@@ -14,7 +14,8 @@ func HTMLRouter() *http.ServeMux {
 
 	router.ServeDir("/", "static/html/pages/")
 
-	router.Post("/htmx/signup", html.SignupHtmx)
+	router.Post("/htmx/signup", html.SignUpHtmx)
+	router.Post("/htmx/signin", html.SignInHtmx)
 
 	return router.Mux
 }

@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/jetnoli/notion-voice-assistant/config/client"
-	"github.com/jetnoli/notion-voice-assistant/models/user"
 	"github.com/jetnoli/notion-voice-assistant/services"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/fetch"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
@@ -50,9 +49,9 @@ func ServeSignUp(w http.ResponseWriter, r *http.Request) {
 	w.Write(html)
 }
 
-func SignupHtmx(w http.ResponseWriter, r *http.Request) {
+func SignUpHtmx(w http.ResponseWriter, r *http.Request) {
 
-	userDetails := &user.User{}
+	userDetails := &services.SignUpRequestBody{}
 
 	err := json.NewDecoder(r.Body).Decode(&userDetails)
 
@@ -61,10 +60,42 @@ func SignupHtmx(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := services.SignUpUser(userDetails)
+	user, err := services.SignUp(userDetails)
 
 	if err != nil {
 		http.Error(w, "error creating user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	htmlData := make(map[string]string)
+
+	htmlData["username"] = user.Username
+
+	html, err := serve.AndInjectHtml(("static/html/responses/signup-success.html"), htmlData)
+
+	if err != nil {
+		http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(html)
+}
+
+func SignInHtmx(w http.ResponseWriter, r *http.Request) {
+	userDetails := &services.SignInRequestBody{}
+
+	err := json.NewDecoder(r.Body).Decode(&userDetails)
+
+	if err != nil {
+		http.Error(w, "cannot read json: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	user, err := services.SignIn(userDetails)
+
+	if err != nil {
+		http.Error(w, "error authenticating in user: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	htmlData := make(map[string]string)
