@@ -5,24 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <script src="https://unpkg.com/htmx.org@1.9.12"
-        integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.js"
+        integrity="sha384-qbtR4rS9RrUMECUWDWM2+YGgN3U4V4ZncZ0BvUcg9FGct0jqXz3PUdVpU1p0yrXS"
         crossorigin="anonymous"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
-    <script>
-        htmx.defineExtension('json-enc', {
-            onEvent: function (name, evt) {
-                if (name === "htmx:configRequest") {
-                    evt.detail.headers['Content-Type'] = "application/json";
-                }
-            },
-
-            encodeParameters: function (xhr, parameters, elt) {
-                xhr.overrideMimeType('text/json');
-                return (JSON.stringify(parameters));
-            }
-        });
-    </script>
 
 
     <style>
@@ -182,34 +168,34 @@
                     <h2> Sign Up</h2>
                 </div>
                 <div class="row form-content">
-                    <form type="submit" hx-ext="json-enc" hx-post="/htmx/signup/" , hx-target="this"
+                    <form type="submit" hx-validate="true" hx-ext="json-enc" hx-post="/htmx/signup/" , hx-target="this"
                         hx-params="not confirm_password">
                         <div class="input">
-                            <label hx-validate="" for="username">
+                            <label for="username">
                                 Username
                             </label>
-                            <input class="form-field" type="text" name="username" />
+                            <input required class="form-field" type="text" name="username" />
                         </div>
                         <div class="input">
                             <label for="email">
                                 Email
                             </label>
-                            <input class="form-field" type="text" name="email" />
+                            <input required hx-validate="email" class="form-field" type="text" name="email" />
                         </div>
                         <div class="input">
                             <label for="password">
                                 Password
                             </label>
-                            <input class="form-field" type="text" name="password">
+                            <input required="form-field" type="text" name="password">
                         </div>
                         <div class="input">
                             <label for="confirm_password">
                                 Confirm Password
                             </label>
-                            <input class="form-field" type="text" name="confirm_password" />
+                            <input required class="form-field" type="text" name="confirm_password" />
                         </div>
 
-                        <button type="submit">
+                        <button type="post">
                             <h3>Sign Up</h3>
                         </button>
                     </form>

@@ -22,13 +22,22 @@ type SignInRequestBody struct {
 func SignUp(userDetails *SignUpRequestBody) (user *userModel.User, err error) {
 
 	// Generate Salt and Password
-	password, salt, err := utils.GenerateEncodedSaltAndPasswordHash(userDetails.Username)
+	password, salt, err := utils.GenerateEncodedSaltAndPasswordHash(userDetails.Password)
 
 	if err != nil {
 		return user, err
 	}
 
 	//TODO: First Check if user with given username or email already exists
+	existingUsers, err := userModel.GetByUsernameOrEmail(userDetails.Username, userDetails.Email)
+
+	if err != nil {
+		return user, err
+	}
+
+	if len(existingUsers) != 0 {
+		return user, fmt.Errorf("user with the given username and/or email already exists")
+	}
 
 	// Create User In DB
 	user, err = userModel.Create(&userModel.Properties{Username: &userDetails.Username, Email: &userDetails.Email})

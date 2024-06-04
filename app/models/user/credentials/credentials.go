@@ -35,7 +35,7 @@ func Seed() {
 	_, err = query(`create table user_credentials (
 		id int generated always as identity primary key,
 		user_id int,
-		password varchar(255),
+		password varchar(511),
 		salt varchar(255),
 		foreign key (user_id) references users(id)
 	);`)

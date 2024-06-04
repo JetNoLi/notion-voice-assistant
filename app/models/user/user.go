@@ -179,3 +179,30 @@ func GetByUsername(username string) (user *User, err error) {
 
 	return user, err
 }
+
+func GetByUsernameOrEmail(username string, email string) (users []*User, err error) {
+
+	query, err := db.Query(fmt.Sprintf(`
+		select * from users
+		where username='%s' or email='%s'
+	`, username, email))
+
+	if err != nil {
+		return users, err
+	}
+
+	for i := query.Next(); i; i = query.Next() {
+		user := &User{}
+		err = query.Scan(&user.Id, &user.Username, &user.Email)
+
+		if err != nil {
+			return users, err
+		}
+
+		users = append(users, user)
+	}
+
+	err = query.Err()
+
+	return users, err
+}

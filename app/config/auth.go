@@ -9,9 +9,9 @@ type AuthConfig struct {
 }
 
 var Auth = &AuthConfig{
-	Time:    1,
-	Memory:  64 * 1024,
+	Time:    3,
+	Memory:  32 * 1024,
 	Threads: 4,
-	KeyLen:  32,
+	KeyLen:  256,
 	SaltLen: 32,
 }

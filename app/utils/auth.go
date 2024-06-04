@@ -3,7 +3,7 @@ package utils
 import (
 	"bytes"
 	"crypto/rand"
-	"encoding/hex"
+	"encoding/base32"
 	"fmt"
 
 	"github.com/jetnoli/notion-voice-assistant/config"
@@ -32,28 +32,35 @@ func GenerateEncodedSaltAndPasswordHash(password string) (encodedPassword string
 	}
 
 	hashedPassword := GeneratePasswordHash(password, salt)
-	encodedSalt = hex.EncodeToString(salt)
-	encodedPassword = hex.EncodeToString(hashedPassword)
+
+	encodedSalt = base32.StdEncoding.EncodeToString(salt[:])
+	encodedPassword = base32.StdEncoding.EncodeToString(hashedPassword[:])
+
+	fmt.Printf("Password: %v\n", encodedPassword)
+	fmt.Printf("Salt: %v\n", encodedSalt)
 
 	return encodedPassword, encodedSalt, err
 }
 
 func DecodeAndComparePasswords(plainTextPassword string, encodedPassword string, encodedSalt string) (bool, error) {
-	salt, err := hex.DecodeString(encodedSalt)
+	salt, err := base32.StdEncoding.DecodeString(encodedSalt)
 
 	if err != nil {
 		return false, err
 	}
 
-	fmt.Println("Salt", salt, encodedPassword)
-
-	hashedPassword, err := hex.DecodeString(encodedPassword)
+	hashedPassword, err := base32.StdEncoding.DecodeString(encodedPassword)
 
 	if err != nil {
 		return false, err
 	}
 
 	hashedComparison := GeneratePasswordHash(plainTextPassword, salt)
+
+	encodedNewPassword := base32.StdEncoding.EncodeToString(hashedComparison)
+
+	fmt.Println("Encoded New password", encodedNewPassword)
+	fmt.Println("Encoded DB Value", encodedPassword)
 
 	return bytes.Equal(hashedComparison, hashedPassword), nil
 }
