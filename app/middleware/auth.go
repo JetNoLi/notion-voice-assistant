@@ -4,24 +4,41 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/jetnoli/notion-voice-assistant/utils"
 )
 
 func CheckAuthorization(w *http.ResponseWriter, r *http.Request) {
-	authCookie := ""
+	userId := r.Context().Value("userId")
+
+	if userId == "" || userId == nil {
+		http.Error(*w, "no access token provided", http.StatusUnauthorized)
+		_ = r.Context().Done() //TODO: Double Check Works
+	}
+}
+
+func DecodeToken(w *http.ResponseWriter, r *http.Request) {
+	token := ""
 
 	for _, cookie := range r.Cookies() {
 		if cookie.Name == "Authorization" {
-			authCookie = cookie.Value
+			token = cookie.Value
 		}
 	}
 
-	if authCookie == "" {
+	if token == "" {
 		fmt.Println("No Cookie")
-		*r = *r.Clone(context.WithValue(r.Context(), "Authorization", false))
 		return
 	}
 
-	fmt.Printf("Cookie is %s", authCookie)
-	*r = *r.Clone(context.WithValue(r.Context(), "Authorization", true))
+	userId, err := utils.DecodeJwt(token)
 
+	if err != nil {
+		fmt.Println("error decoding token: " + err.Error())
+		return
+	}
+
+	fmt.Println("userId ", userId)
+
+	*r = *r.Clone(context.WithValue(r.Context(), "userId", userId))
 }

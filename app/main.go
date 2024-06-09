@@ -31,7 +31,7 @@ func main() {
 	defer db.Db.Close()
 
 	router := Router.CreateRouter("*", Router.RouterOptions{
-		PreHandlerMiddleware: []Router.MiddlewareHandler{middleware.CheckAuthorization},
+		PreHandlerMiddleware: []Router.MiddlewareHandler{middleware.DecodeToken},
 	})
 
 	router.Handle("/notion/", routes.NotionRouter())

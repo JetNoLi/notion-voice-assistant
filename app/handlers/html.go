@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/jetnoli/notion-voice-assistant/services"
@@ -75,8 +76,13 @@ func SignInHtmx(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO: Implement Based on JWT
-	http.SetCookie(w, utils.GenerateAuthCookie("true"))
+	token, err := utils.GenerateJwt(fmt.Sprintf("%d", user.Id))
+
+	if err != nil {
+		http.Error(w, "error formatting jwt: "+err.Error(), http.StatusInternalServerError)
+	}
+
+	http.SetCookie(w, utils.GenerateAuthCookie(token))
 
 	_, err = w.Write(html)
 

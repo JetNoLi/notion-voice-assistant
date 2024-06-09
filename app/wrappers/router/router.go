@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jetnoli/notion-voice-assistant/middleware"
 	"github.com/jetnoli/notion-voice-assistant/utils"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
 )
@@ -154,7 +155,7 @@ func (router Router) Patch(path string, handler http.HandlerFunc, options *Route
 // Templating
 
 // Serve html at the given filepath relative to app
-func (router Router) Serve(path string, filePath string) {
+func (router Router) Serve(path string, filePath string, options *RouteOptions) {
 	route := router.CreatePath(path, "GET")
 
 	router.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
@@ -167,8 +168,9 @@ func (router Router) Serve(path string, filePath string) {
 			return
 		}
 
+		//TODO: Error Handling
 		w.Write(html)
-	}, &RouteOptions{})
+	}, options)
 }
 
 // Serves all html in given directory relative to app
@@ -197,10 +199,13 @@ func (router Router) ServeDir(baseUrlPath string, dirPath string) {
 
 		route := baseUrlPath + strings.Split(fileName, ".")[0] + "/"
 
+		options := &RouteOptions{}
+
 		if route == "/index/" {
 			route = "/"
+			options.PreHandlerMiddleware = []MiddlewareHandler{middleware.CheckAuthorization}
 		}
 
-		router.Serve(route, filePath)
+		router.Serve(route, filePath, options)
 	}
 }
