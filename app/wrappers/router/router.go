@@ -5,13 +5,24 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
+	"runtime"
 	"strings"
 
 	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
 )
 
 type RouterOptions struct {
-	ExactPathsOnly bool // Appends the {$} for all paths in router
+	ExactPathsOnly        bool // Appends the {$} for all paths in router
+	PreHandlerMiddleware  []MiddlewareHandler
+	PostHandlerMiddleware []MiddlewareHandler
+}
+
+type MiddlewareHandler = func(w *http.ResponseWriter, r *http.Request)
+
+type Middleware struct {
+	Handler          MiddlewareHandler
+	IsAfterExecution bool
 }
 
 type Router struct {
@@ -23,11 +34,38 @@ type Router struct {
 // TODO: Add Global Response Headers
 func CreateRouter(path string, options RouterOptions) *Router {
 	router := &Router{}
+
 	router.Mux = http.NewServeMux()
+
 	router.Path = path
 	router.Options = options
 
+	if options.PostHandlerMiddleware == nil {
+		router.Options.PostHandlerMiddleware = make([]MiddlewareHandler, 0)
+	}
+
+	if options.PreHandlerMiddleware == nil {
+		router.Options.PreHandlerMiddleware = make([]MiddlewareHandler, 0)
+	}
+
 	return router
+}
+
+func (router Router) ApplyMiddleware(middleware []*Middleware) error {
+	for i, m := range middleware {
+
+		if m.Handler == nil {
+			return fmt.Errorf("inalid middleware supplied to apply middleware, at index %d", i)
+		}
+
+		if m.IsAfterExecution {
+			router.Options.PostHandlerMiddleware = append(router.Options.PostHandlerMiddleware, m.Handler)
+		} else {
+			router.Options.PostHandlerMiddleware = append(router.Options.PreHandlerMiddleware, m.Handler)
+		}
+	}
+
+	return nil
 }
 
 func (router Router) CreatePath(path string, method string) string {
@@ -59,12 +97,46 @@ func (router Router) CreatePath(path string, method string) string {
 	return url + pathEndString
 }
 
-// Adds Basic Logging to handler
+// TODO: Create Get Func Name Util
+// TODO: Add config to only run these in DEBUG mode
+func (router Router) ExecuteWithMiddleware(w *http.ResponseWriter, r *http.Request, handler http.HandlerFunc) {
+
+	for _, middleware := range router.Options.PreHandlerMiddleware {
+		fmt.Printf("Middleware Applied %s", runtime.FuncForPC(reflect.ValueOf(middleware).Pointer()).Name())
+		middleware(w, r)
+	}
+
+	if handler != nil {
+		fmt.Println("executing handler")
+		handler(*w, r)
+	}
+
+	for _, middleware := range router.Options.PostHandlerMiddleware {
+		fmt.Printf("Middleware Applied %s", runtime.FuncForPC(reflect.ValueOf(middleware).Pointer()).Name())
+		middleware(w, r)
+	}
+
+}
+
 func (router Router) HandleFunc(path string, handler http.HandlerFunc) {
 	router.Mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Starting Request: " + path)
-		handler(w, r)
-		fmt.Println("Completing Request: " + path)
+		router.ExecuteWithMiddleware(&w, r, handler)
+	})
+}
+
+type Handler struct {
+	Mux    *http.ServeMux
+	Router *Router
+}
+
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.Router.ExecuteWithMiddleware(&w, r, h.Mux.ServeHTTP)
+}
+
+func (router Router) Handle(path string, mux *http.ServeMux) {
+	router.Mux.Handle(path, &Handler{
+		Mux:    mux,
+		Router: &router,
 	})
 }
 
