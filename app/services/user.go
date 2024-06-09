@@ -64,9 +64,6 @@ func SignIn(userDetails *SignInRequestBody) (user *userModel.User, err error) {
 		return nil, err
 	}
 
-	fmt.Println(userDetails)
-	fmt.Println(userCredentials)
-
 	isAuthenticated, err := utils.DecodeAndComparePasswords(userDetails.Password, userCredentials.Password, userCredentials.Salt)
 
 	if err != nil {

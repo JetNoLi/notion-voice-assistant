@@ -10,5 +10,5 @@ type RouteHandler struct {
 }
 
 func (h RouteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.Router.ExecuteWithMiddleware(&w, r, h.ChildMux.ServeHTTP)
+	h.Router.ExecuteWithMiddleware(&w, r, h.ChildMux.ServeHTTP, &RouteOptions{})
 }

@@ -10,7 +10,7 @@ import (
 func GptRouter() *http.ServeMux {
 	router := Router.CreateRouter("/completion", Router.RouterOptions{})
 
-	router.Post("/", handlers.Assist)
+	router.Post("/", handlers.Assist, &Router.RouteOptions{})
 
 	return router.Mux
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/jetnoli/notion-voice-assistant/middleware"
 	"github.com/jetnoli/notion-voice-assistant/routes"
 	"github.com/jetnoli/notion-voice-assistant/utils"
-	"github.com/jetnoli/notion-voice-assistant/wrappers/router"
+	Router "github.com/jetnoli/notion-voice-assistant/wrappers/router"
 )
 
 func main() {
@@ -30,8 +30,8 @@ func main() {
 	db.Connect()
 	defer db.Db.Close()
 
-	router := router.CreateRouter("*", router.RouterOptions{
-		PreHandlerMiddleware: []router.MiddlewareHandler{middleware.CheckAuthorization},
+	router := Router.CreateRouter("*", Router.RouterOptions{
+		PreHandlerMiddleware: []Router.MiddlewareHandler{middleware.CheckAuthorization},
 	})
 
 	router.Handle("/notion/", routes.NotionRouter())
@@ -39,7 +39,7 @@ func main() {
 	router.Handle("/transcribe/", routes.WhisperRouter())
 	router.Handle("/user/", routes.UserRouter())
 	router.Handle("/", routes.HTMLRouter())
-	router.HandleFunc("/health/{$}", handlers.HealthCheck)
+	router.HandleFunc("/health/{$}", handlers.HealthCheck, &Router.RouteOptions{})
 
 	server := http.Server{
 		Addr:         ":" + config.Port,

@@ -80,9 +80,25 @@ func (router Router) CreatePath(path string, method string) string {
 }
 
 // TODO: Add config to only run these in DEBUG mode
-func (router Router) ExecuteWithMiddleware(w *http.ResponseWriter, r *http.Request, handler http.HandlerFunc) {
+func (router Router) ExecuteWithMiddleware(w *http.ResponseWriter, r *http.Request, handler http.HandlerFunc, routeOptions *RouteOptions) {
 
-	for _, middleware := range router.Options.PreHandlerMiddleware {
+	//TODO: Make sure doesn't pass by reference
+	preHandlerMiddleware := router.Options.PreHandlerMiddleware[:]
+	postHandlerMiddleware := router.Options.PostHandlerMiddleware[:]
+
+	if routeOptions != nil {
+		if routeOptions.PreHandlerMiddleware != nil {
+			preHandlerMiddleware = append(preHandlerMiddleware, routeOptions.PreHandlerMiddleware...)
+
+		}
+
+		if routeOptions.PostHandlerMiddleware != nil {
+			postHandlerMiddleware = append(postHandlerMiddleware, routeOptions.PostHandlerMiddleware...)
+		}
+
+	}
+
+	for _, middleware := range preHandlerMiddleware {
 		fmt.Printf("middleware applied %s", utils.GetFunctionName(middleware))
 		middleware(w, r)
 	}
@@ -90,16 +106,16 @@ func (router Router) ExecuteWithMiddleware(w *http.ResponseWriter, r *http.Reque
 	fmt.Println("executing handler")
 	handler(*w, r)
 
-	for _, middleware := range router.Options.PostHandlerMiddleware {
+	for _, middleware := range postHandlerMiddleware {
 		fmt.Printf("middleware applied %s", utils.GetFunctionName(middleware))
 		middleware(w, r)
 	}
 
 }
 
-func (router Router) HandleFunc(path string, handler http.HandlerFunc) {
+func (router Router) HandleFunc(path string, handler http.HandlerFunc, options *RouteOptions) {
 	router.Mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		router.ExecuteWithMiddleware(&w, r, handler)
+		router.ExecuteWithMiddleware(&w, r, handler, options)
 	})
 }
 
@@ -110,29 +126,29 @@ func (router Router) Handle(path string, mux *http.ServeMux) {
 	})
 }
 
-func (router Router) Get(path string, handler http.HandlerFunc) {
+func (router Router) Get(path string, handler http.HandlerFunc, options *RouteOptions) {
 	route := router.CreatePath(path, "GET")
-	router.HandleFunc(route, handler)
+	router.HandleFunc(route, handler, options)
 }
 
-func (router Router) Post(path string, handler http.HandlerFunc) {
+func (router Router) Post(path string, handler http.HandlerFunc, options *RouteOptions) {
 	route := router.CreatePath(path, "POST")
-	router.HandleFunc(route, handler)
+	router.HandleFunc(route, handler, options)
 }
 
-func (router Router) Delete(path string, handler http.HandlerFunc) {
+func (router Router) Delete(path string, handler http.HandlerFunc, options *RouteOptions) {
 	route := router.CreatePath(path, "DELETE")
-	router.HandleFunc(route, handler)
+	router.HandleFunc(route, handler, options)
 }
 
-func (router Router) Put(path string, handler http.HandlerFunc) {
+func (router Router) Put(path string, handler http.HandlerFunc, options *RouteOptions) {
 	route := router.CreatePath(path, "PUT")
-	router.HandleFunc(route, handler)
+	router.HandleFunc(route, handler, options)
 }
 
-func (router Router) Patch(path string, handler http.HandlerFunc) {
+func (router Router) Patch(path string, handler http.HandlerFunc, options *RouteOptions) {
 	route := router.CreatePath(path, "PATCH")
-	router.HandleFunc(route, handler)
+	router.HandleFunc(route, handler, options)
 }
 
 // Templating
@@ -152,7 +168,7 @@ func (router Router) Serve(path string, filePath string) {
 		}
 
 		w.Write(html)
-	})
+	}, &RouteOptions{})
 }
 
 // Serves all html in given directory relative to app
