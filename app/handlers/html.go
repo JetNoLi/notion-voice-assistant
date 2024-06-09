@@ -2,12 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
-	"github.com/jetnoli/notion-voice-assistant/config/client"
 	"github.com/jetnoli/notion-voice-assistant/services"
-	"github.com/jetnoli/notion-voice-assistant/wrappers/fetch"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
 )
 
@@ -16,15 +13,15 @@ import (
 func ServeRoot(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	res, err := client.WhisperApi.Get("/", fetch.ApiGetRequestOptions{})
+	// res, err := client.WhisperApi.Get("/", fetch.ApiGetRequestOptions{})
 
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(502)
-		return
-	}
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	w.WriteHeader(502)
+	// 	return
+	// }
 
-	defer res.Body.Close()
+	// defer res.Body.Close()
 
 	html, err := serve.Html("static/html/index.html")
 
@@ -33,7 +30,11 @@ func ServeRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(html)
+	_, err = w.Write(html)
+
+	if err != nil {
+		http.Error(w, "error returning file: \n"+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func ServeSignUp(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +47,11 @@ func ServeSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(html)
+	_, err = w.Write(html)
+
+	if err != nil {
+		http.Error(w, "error returning file: \n"+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func SignUpHtmx(w http.ResponseWriter, r *http.Request) {
@@ -74,21 +79,25 @@ func SignUpHtmx(w http.ResponseWriter, r *http.Request) {
 	html, err := serve.AndInjectHtml(("static/html/responses/signup-success.html"), htmlData)
 
 	if err != nil {
-		http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "error Reading file: \n"+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(html)
+	_, err = w.Write(html)
+
+	if err != nil {
+		http.Error(w, "error returning file: \n"+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func SignInHtmx(w http.ResponseWriter, r *http.Request) {
+
 	userDetails := &services.SignInRequestBody{}
 
 	err := json.NewDecoder(r.Body).Decode(&userDetails)
 
 	if err != nil {
 		http.Error(w, "cannot read json: "+err.Error(), http.StatusBadRequest)
-		return
 	}
 
 	user, err := services.SignIn(userDetails)
@@ -105,11 +114,25 @@ func SignInHtmx(w http.ResponseWriter, r *http.Request) {
 	html, err := serve.AndInjectHtml(("static/html/responses/signup-success.html"), htmlData)
 
 	if err != nil {
-		http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "error reading file:\n"+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(html)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Authorization",
+		Value:    "true",
+		HttpOnly: true,
+		Secure:   true,
+		MaxAge:   60 * 60 * 24 * 7, // 1 Week
+		Path:     "/",
+		// SameSite: http.SameSiteNoneMode,
+	})
+
+	_, err = w.Write(html)
+
+	if err != nil {
+		http.Error(w, "error returning file: \n"+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // func Takes Generic I & D

@@ -3,14 +3,14 @@ package routes
 import (
 	"net/http"
 
-	gpt "github.com/jetnoli/notion-voice-assistant/handlers"
-	"github.com/jetnoli/notion-voice-assistant/wrappers/router"
+	"github.com/jetnoli/notion-voice-assistant/handlers"
+	Router "github.com/jetnoli/notion-voice-assistant/wrappers/router"
 )
 
 func GptRouter() *http.ServeMux {
-	router := router.CreateRouter("/completion", router.RouterOptions{})
+	router := Router.CreateRouter("/completion", Router.RouterOptions{})
 
-	router.Post("/", gpt.Assist)
+	router.Post("/", handlers.Assist)
 
 	return router.Mux
 }

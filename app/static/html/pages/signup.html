@@ -168,34 +168,35 @@
                     <h2> Sign Up</h2>
                 </div>
                 <div class="row form-content">
-                    <form type="submit" hx-validate="true" hx-ext="json-enc" hx-post="/htmx/signup/" , hx-target="this"
+                    <form type="submit" hx-ext="json-enc" hx-post="/htmx/signup/" , hx-target="this"
                         hx-params="not confirm_password">
                         <div class="input">
                             <label for="username">
                                 Username
                             </label>
-                            <input required class="form-field" type="text" name="username" />
+                            <input required hx-validate="true" class="form-field" type="text" name="username" />
                         </div>
                         <div class="input">
                             <label for="email">
                                 Email
                             </label>
-                            <input required hx-validate="email" class="form-field" type="text" name="email" />
+                            <input required hx-validate="true" class="form-field" type="email" name="email" />
                         </div>
                         <div class="input">
                             <label for="password">
                                 Password
                             </label>
-                            <input required="form-field" type="text" name="password">
+                            <input required hx-validate="true" class="form-field" type="password" name="password">
                         </div>
                         <div class="input">
                             <label for="confirm_password">
                                 Confirm Password
                             </label>
-                            <input required class="form-field" type="text" name="confirm_password" />
+                            <input required hx-validate="true" class="form-field" type="password"
+                                name="confirm_password" />
                         </div>
 
-                        <button type="post">
+                        <button type="submit">
                             <h3>Sign Up</h3>
                         </button>
                     </form>
