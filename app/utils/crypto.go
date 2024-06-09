@@ -4,13 +4,10 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base32"
-	"fmt"
 
 	"github.com/jetnoli/notion-voice-assistant/config"
 	"golang.org/x/crypto/argon2"
 )
-
-//TODO: Doesn't cater for numbers and special chars?
 
 func GenerateSalt(length int32) ([]byte, error) {
 	salt := make([]byte, length)
@@ -36,9 +33,6 @@ func GenerateEncodedSaltAndPasswordHash(password string) (encodedPassword string
 	encodedSalt = base32.StdEncoding.EncodeToString(salt[:])
 	encodedPassword = base32.StdEncoding.EncodeToString(hashedPassword[:])
 
-	fmt.Printf("Password: %v\n", encodedPassword)
-	fmt.Printf("Salt: %v\n", encodedSalt)
-
 	return encodedPassword, encodedSalt, err
 }
 
@@ -56,11 +50,6 @@ func DecodeAndComparePasswords(plainTextPassword string, encodedPassword string,
 	}
 
 	hashedComparison := GeneratePasswordHash(plainTextPassword, salt)
-
-	encodedNewPassword := base32.StdEncoding.EncodeToString(hashedComparison)
-
-	fmt.Println("Encoded New password", encodedNewPassword)
-	fmt.Println("Encoded DB Value", encodedPassword)
 
 	return bytes.Equal(hashedComparison, hashedPassword), nil
 }

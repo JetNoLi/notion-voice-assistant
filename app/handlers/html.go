@@ -5,54 +5,11 @@ import (
 	"net/http"
 
 	"github.com/jetnoli/notion-voice-assistant/services"
+	"github.com/jetnoli/notion-voice-assistant/utils"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
 )
 
-//TODO: Automate all folders in html folder get served
-
-func ServeRoot(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	// res, err := client.WhisperApi.Get("/", fetch.ApiGetRequestOptions{})
-
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	w.WriteHeader(502)
-	// 	return
-	// }
-
-	// defer res.Body.Close()
-
-	html, err := serve.Html("static/html/index.html")
-
-	if err != nil {
-		http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	_, err = w.Write(html)
-
-	if err != nil {
-		http.Error(w, "error returning file: \n"+err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func ServeSignUp(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	html, err := serve.Html("static/html/signup.html")
-
-	if err != nil {
-		http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	_, err = w.Write(html)
-
-	if err != nil {
-		http.Error(w, "error returning file: \n"+err.Error(), http.StatusInternalServerError)
-	}
-}
+// TODO: Allow a way to specify which routes are restricted when serving static html
 
 func SignUpHtmx(w http.ResponseWriter, r *http.Request) {
 
@@ -118,15 +75,8 @@ func SignInHtmx(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Authorization",
-		Value:    "true",
-		HttpOnly: true,
-		Secure:   true,
-		MaxAge:   60 * 60 * 24 * 7, // 1 Week
-		Path:     "/",
-		// SameSite: http.SameSiteNoneMode,
-	})
+	//TODO: Implement Based on JWT
+	http.SetCookie(w, utils.GenerateAuthCookie("true"))
 
 	_, err = w.Write(html)
 
