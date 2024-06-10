@@ -10,8 +10,10 @@ import (
 	"github.com/jetnoli/notion-voice-assistant/config"
 	"github.com/jetnoli/notion-voice-assistant/db"
 	"github.com/jetnoli/notion-voice-assistant/handlers"
+	"github.com/jetnoli/notion-voice-assistant/middleware"
 	"github.com/jetnoli/notion-voice-assistant/routes"
 	"github.com/jetnoli/notion-voice-assistant/utils"
+	Router "github.com/jetnoli/notion-voice-assistant/wrappers/router"
 )
 
 func main() {
@@ -28,20 +30,22 @@ func main() {
 	db.Connect()
 	defer db.Db.Close()
 
-	router := http.NewServeMux()
+	router := Router.CreateRouter("*", Router.RouterOptions{
+		PreHandlerMiddleware: []Router.MiddlewareHandler{middleware.DecodeToken},
+	})
 
 	router.Handle("/notion/", routes.NotionRouter())
 	router.Handle("/completion/", routes.GptRouter())
 	router.Handle("/transcribe/", routes.WhisperRouter())
 	router.Handle("/user/", routes.UserRouter())
 	router.Handle("/", routes.HTMLRouter())
-	router.HandleFunc("/health/{$}", handlers.HealthCheck)
+	router.HandleFunc("/health/{$}", handlers.HealthCheck, &Router.RouteOptions{})
 
 	server := http.Server{
 		Addr:         ":" + config.Port,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		Handler:      router,
+		Handler:      router.Mux,
 	}
 
 	fmt.Println("Starting Server on http://localhost:" + config.Port)

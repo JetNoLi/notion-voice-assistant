@@ -5,10 +5,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.js"
-        integrity="sha384-qbtR4rS9RrUMECUWDWM2+YGgN3U4V4ZncZ0BvUcg9FGct0jqXz3PUdVpU1p0yrXS"
+    <script src="https://unpkg.com/htmx.org@1.9.12"
+        integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
         crossorigin="anonymous"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+    <script>
+        htmx.defineExtension('json-enc', {
+            onEvent: function (name, evt) {
+                if (name === "htmx:configRequest") {
+                    evt.detail.headers['Content-Type'] = "application/json";
+                }
+            },
+
+            encodeParameters: function (xhr, parameters, elt) {
+                xhr.overrideMimeType('text/json');
+                return (JSON.stringify(parameters));
+            }
+        });
+    </script>
 
 
     <style>
@@ -52,6 +66,10 @@
                 color: rgb(54, 89, 114);
                 padding: 0 2.5%;
             }
+
+            h2 {
+                padding: 2.5%;
+            }
         }
 
         .display {
@@ -90,6 +108,7 @@
 
         form {
             display: flex;
+            justify-content: flex-end;
             width: 100%;
             flex-direction: column;
             gap: 5%;
@@ -114,7 +133,6 @@
             display: flex;
             flex-direction: column;
             gap: 12.5%;
-            flex: 1;
         }
 
         .form-field {
@@ -164,40 +182,29 @@
         </div>
         <div class="display">
             <div class="form">
-                <div class="row">
-                    <h2> Sign Up</h2>
-                </div>
+
                 <div class="row form-content">
-                    <form type="submit" hx-ext="json-enc" hx-post="/htmx/signup/" , hx-target="this"
-                        hx-params="not confirm_password">
-                        <div class="input">
-                            <label for="username">
-                                Username
-                            </label>
-                            <input required hx-validate="true" class="form-field" type="text" name="username" />
+
+                    <form type="submit" hx-ext="json-enc" hx-post="/htmx/signin/" , hx-target="this">
+                        <div class="title">
+                            <h2> Log In </h2>
                         </div>
                         <div class="input">
                             <label for="email">
                                 Email
                             </label>
-                            <input required hx-validate="true" class="form-field" type="email" name="email" />
+                            <input class="form-field" type="text" name="email" />
                         </div>
                         <div class="input">
                             <label for="password">
                                 Password
                             </label>
-                            <input required hx-validate="true" class="form-field" type="password" name="password">
-                        </div>
-                        <div class="input">
-                            <label for="confirm_password">
-                                Confirm Password
-                            </label>
-                            <input required hx-validate="true" class="form-field" type="password"
-                                name="confirm_password" />
+                            <input class="form-field" type="text" name="password">
                         </div>
 
+
                         <button type="submit">
-                            <h3>Sign Up</h3>
+                            <h3> Login </h3>
                         </button>
                     </form>
                 </div>

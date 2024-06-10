@@ -2,57 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
-	"github.com/jetnoli/notion-voice-assistant/config/client"
-	"github.com/jetnoli/notion-voice-assistant/models/user"
 	"github.com/jetnoli/notion-voice-assistant/services"
-	"github.com/jetnoli/notion-voice-assistant/wrappers/fetch"
+	"github.com/jetnoli/notion-voice-assistant/utils"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
 )
 
-//TODO: Automate all folders in html folder get served
+// TODO: Allow a way to specify which routes are restricted when serving static html
 
-func ServeRoot(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+func SignUpHtmx(w http.ResponseWriter, r *http.Request) {
 
-	res, err := client.WhisperApi.Get("/", fetch.ApiGetRequestOptions{})
-
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(502)
-		return
-	}
-
-	defer res.Body.Close()
-
-	html, err := serve.Html("static/html/index.html")
-
-	if err != nil {
-		http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(html)
-}
-
-func ServeSignUp(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	html, err := serve.Html("static/html/signup.html")
-
-	if err != nil {
-		http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(html)
-}
-
-func SignupHtmx(w http.ResponseWriter, r *http.Request) {
-
-	userDetails := &user.User{}
+	userDetails := &services.SignUpRequestBody{}
 
 	err := json.NewDecoder(r.Body).Decode(&userDetails)
 
@@ -61,10 +22,11 @@ func SignupHtmx(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := services.SignUpUser(userDetails)
+	user, err := services.SignUp(userDetails)
 
 	if err != nil {
 		http.Error(w, "error creating user: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	htmlData := make(map[string]string)
@@ -74,11 +36,65 @@ func SignupHtmx(w http.ResponseWriter, r *http.Request) {
 	html, err := serve.AndInjectHtml(("static/html/responses/signup-success.html"), htmlData)
 
 	if err != nil {
-		http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "error Reading file: \n"+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(html)
+	cookie, err := utils.GenerateAuthCookie(user.Id)
+
+	if err != nil {
+		http.Error(w, "error creating cookie: "+err.Error(), http.StatusInternalServerError)
+	}
+
+	http.SetCookie(w, cookie)
+	_, err = w.Write(html)
+
+	if err != nil {
+		http.Error(w, "error returning file: \n"+err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func SignInHtmx(w http.ResponseWriter, r *http.Request) {
+
+	userDetails := &services.SignInRequestBody{}
+
+	err := json.NewDecoder(r.Body).Decode(&userDetails)
+
+	if err != nil {
+		http.Error(w, "cannot read json: "+err.Error(), http.StatusBadRequest)
+	}
+
+	user, err := services.SignIn(userDetails)
+
+	if err != nil {
+		http.Error(w, "error authenticating in user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	htmlData := make(map[string]string)
+
+	htmlData["username"] = user.Username
+
+	html, err := serve.AndInjectHtml(("static/html/responses/signup-success.html"), htmlData)
+
+	if err != nil {
+		http.Error(w, "error reading file:\n"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	cookie, err := utils.GenerateAuthCookie(user.Id)
+
+	if err != nil {
+		http.Error(w, "error creating cookie: "+err.Error(), http.StatusInternalServerError)
+	}
+
+	http.SetCookie(w, cookie)
+
+	_, err = w.Write(html)
+
+	if err != nil {
+		http.Error(w, "error returning file: \n"+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // func Takes Generic I & D

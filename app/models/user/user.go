@@ -11,13 +11,12 @@ type User struct {
 	Id       int    `json:"id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
-	Password string `json:"password"` // Hashed Value
 }
 
-type UserUpdateBody struct {
+// All unique fields, excluding db id
+type Properties struct {
 	Username *string `json:"username"`
 	Email    *string `json:"email"`
-	Password *string `json:"password"`
 }
 
 func Seed() {
@@ -26,7 +25,7 @@ func Seed() {
 	query := db.Connect()
 
 	_, err := query(`
-		drop table users;
+		drop table users CASCADE;
 	`)
 
 	if err != nil {
@@ -34,10 +33,9 @@ func Seed() {
 	}
 
 	_, err = query(`create table users (
-		id int generated always as identity,
+		id int generated always as identity primary key,
 		username varchar(255),
-		email varchar(255),
-		password varchar(255)
+		email varchar(255)
 	);`)
 
 	if err != nil {
@@ -47,16 +45,16 @@ func Seed() {
 	fmt.Println("Users Seeded Successfully")
 }
 
-func Create(user *User) (*User, error) {
+func Create(user *Properties) (*User, error) {
 	newUser := &User{}
 
 	query := db.QueryRow(fmt.Sprintf(`
-		insert into users (username, email, password)
-		values ( '%s', '%s', '%s')
-		returning id, username, email, password;
-		`, user.Username, user.Email, user.Password))
+		insert into users (username, email)
+		values ( '%s', '%s')
+		returning id, username, email;
+		`, *user.Username, *user.Email))
 
-	err := query.Scan(&newUser.Id, &newUser.Username, &newUser.Email, &newUser.Password)
+	err := query.Scan(&newUser.Id, &newUser.Username, &newUser.Email)
 
 	if err != nil {
 		return &User{}, err
@@ -79,7 +77,7 @@ func GetAll() (users []*User, err error) {
 	for i := query.Next(); i; i = query.Next() {
 		newUser := &User{}
 
-		err = query.Scan(&newUser.Id, &newUser.Username, &newUser.Email, &newUser.Password)
+		err = query.Scan(&newUser.Id, &newUser.Username, &newUser.Email)
 
 		if err != nil {
 			return users, err
@@ -99,15 +97,15 @@ func GetById(id int) (user *User, err error) {
 
 	query := db.QueryRow(fmt.Sprintf(`
 		select * from users
-		where id=%d
+		where id=%d;
 	`, id))
 
-	err = query.Scan(&user.Id, &user.Username, &user.Email, &user.Password)
+	err = query.Scan(&user.Id, &user.Username, &user.Email)
 
 	return user, err
 }
 
-func UpdateById(id int, body UserUpdateBody) (*User, error) {
+func UpdateById(id int, body Properties) (*User, error) {
 
 	bodyMap, err := utils.StructToMap(body)
 
@@ -129,12 +127,12 @@ func UpdateById(id int, body UserUpdateBody) (*User, error) {
 		update users
 		set %s
 		where id=%d
-		returning id, username, email, password
+		returning id, username, email;
 	`, bodyString, id))
 
 	newUser := &User{}
 
-	err = query.Scan(&newUser.Id, &newUser.Username, &newUser.Email, &newUser.Password)
+	err = query.Scan(&newUser.Id, &newUser.Username, &newUser.Email)
 
 	return newUser, err
 }
@@ -157,12 +155,14 @@ func DeleteAll() error {
 func GetByEmail(email string) (user *User, err error) {
 	user = &User{}
 
+	fmt.Println("Query", email)
+
 	query := db.QueryRow(fmt.Sprintf(`
 		select * from users
 		where email='%s'
 	`, email))
 
-	err = query.Scan(&user.Id, &user.Username, &user.Email, &user.Password)
+	err = query.Scan(&user.Id, &user.Username, &user.Email)
 
 	return user, err
 }
@@ -175,7 +175,34 @@ func GetByUsername(username string) (user *User, err error) {
 		where username='%s'
 	`, username))
 
-	err = query.Scan(&user.Id, &user.Username, &user.Email, &user.Password)
+	err = query.Scan(&user.Id, &user.Username, &user.Email)
 
 	return user, err
+}
+
+func GetByUsernameOrEmail(username string, email string) (users []*User, err error) {
+
+	query, err := db.Query(fmt.Sprintf(`
+		select * from users
+		where username='%s' or email='%s'
+	`, username, email))
+
+	if err != nil {
+		return users, err
+	}
+
+	for i := query.Next(); i; i = query.Next() {
+		user := &User{}
+		err = query.Scan(&user.Id, &user.Username, &user.Email)
+
+		if err != nil {
+			return users, err
+		}
+
+		users = append(users, user)
+	}
+
+	err = query.Err()
+
+	return users, err
 }

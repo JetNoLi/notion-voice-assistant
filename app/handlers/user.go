@@ -12,7 +12,7 @@ import (
 func SignUp(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	body := &user.User{}
+	body := &user.Properties{}
 
 	err := json.NewDecoder(r.Body).Decode(&body)
 
@@ -21,7 +21,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := services.SignUpUser(body)
+	user, err := services.CreateUser(body)
 
 	if err != nil {
 		http.Error(w, "Error Creating User: "+err.Error(), http.StatusInternalServerError)
@@ -99,7 +99,7 @@ func UpdateUserById(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	body := &user.UserUpdateBody{}
+	body := &user.Properties{}
 
 	err = json.NewDecoder(r.Body).Decode(&body)
 
