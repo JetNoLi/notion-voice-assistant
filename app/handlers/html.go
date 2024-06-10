@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/jetnoli/notion-voice-assistant/services"
@@ -41,6 +40,13 @@ func SignUpHtmx(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cookie, err := utils.GenerateAuthCookie(user.Id)
+
+	if err != nil {
+		http.Error(w, "error creating cookie: "+err.Error(), http.StatusInternalServerError)
+	}
+
+	http.SetCookie(w, cookie)
 	_, err = w.Write(html)
 
 	if err != nil {
@@ -76,13 +82,13 @@ func SignInHtmx(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := utils.GenerateJwt(fmt.Sprintf("%d", user.Id))
+	cookie, err := utils.GenerateAuthCookie(user.Id)
 
 	if err != nil {
-		http.Error(w, "error formatting jwt: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "error creating cookie: "+err.Error(), http.StatusInternalServerError)
 	}
 
-	http.SetCookie(w, utils.GenerateAuthCookie(token))
+	http.SetCookie(w, cookie)
 
 	_, err = w.Write(html)
 

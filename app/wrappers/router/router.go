@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -32,6 +33,7 @@ type Router struct {
 }
 
 // TODO: Add Global Response Headers
+// TODO: Middleware and Handlers should also return errors, to trigger cancellation?
 func CreateRouter(path string, options RouterOptions) *Router {
 	router := &Router{}
 
@@ -102,12 +104,22 @@ func (router Router) ExecuteWithMiddleware(w *http.ResponseWriter, r *http.Reque
 	for _, middleware := range preHandlerMiddleware {
 		fmt.Printf("middleware applied %s", utils.GetFunctionName(middleware))
 		middleware(w, r)
+
+		if r.Context().Err() != nil {
+			return
+		}
 	}
 
-	fmt.Println("executing handler")
+	handlerName := utils.GetFunctionName(handler)
+	fmt.Println("executing handler ", handlerName)
+
 	handler(*w, r)
 
 	for _, middleware := range postHandlerMiddleware {
+		if r.Context().Err() != nil {
+			return
+		}
+
 		fmt.Printf("middleware applied %s", utils.GetFunctionName(middleware))
 		middleware(w, r)
 	}
@@ -116,7 +128,11 @@ func (router Router) ExecuteWithMiddleware(w *http.ResponseWriter, r *http.Reque
 
 func (router Router) HandleFunc(path string, handler http.HandlerFunc, options *RouteOptions) {
 	router.Mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		rCtxCopy, cancel := context.WithCancel(r.Context())
+		*r = *r.WithContext(context.WithValue(rCtxCopy, "cancel_request", cancel))
+
 		router.ExecuteWithMiddleware(&w, r, handler, options)
+
 	})
 }
 

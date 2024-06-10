@@ -1,8 +1,18 @@
 package utils
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
-func GenerateAuthCookie(token string) *http.Cookie {
+func GenerateAuthCookie(userId int) (*http.Cookie, error) {
+	userIdStr := fmt.Sprintf("%d", userId)
+	token, err := GenerateJwt(userIdStr)
+
+	if err != nil {
+		return &http.Cookie{}, err
+	}
+
 	return &http.Cookie{
 		Name:     "Authorization",
 		Value:    token,
@@ -10,5 +20,5 @@ func GenerateAuthCookie(token string) *http.Cookie {
 		Secure:   true,
 		MaxAge:   60 * 60 * 24 * 7, // 1 Week
 		Path:     "/",
-	}
+	}, nil
 }
