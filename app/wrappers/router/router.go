@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/jetnoli/notion-voice-assistant/middleware"
 	"github.com/jetnoli/notion-voice-assistant/utils"
@@ -175,22 +176,34 @@ func (router Router) Serve(path string, filePath string, options *RouteOptions) 
 	router.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		html, err := serve.Html(filePath)
+		data, err := serve.ReadData(filePath)
 
 		if err != nil {
 			http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		w.Header().Set("Content-Type", http.DetectContentType(data))
+
 		//TODO: Error Handling
-		w.Write(html)
+		_, err = w.Write(data)
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error serving file: %s", filePath), http.StatusInternalServerError)
+		}
+
 	}, options)
 }
 
+type ServeDirOptions struct {
+	IncludedExtensions         []string
+	RoutePathContainsExtension bool
+	Recursive                  bool
+}
+
 // Serves all html in given directory relative to app
-// Ignores nested directories
 // Include trailing slash in dir name
-func (router Router) ServeDir(baseUrlPath string, dirPath string) {
+func (router Router) ServeDir(baseUrlPath string, dirPath string, options *ServeDirOptions) {
 	absPath, err := filepath.Abs(dirPath)
 
 	if err != nil {
@@ -206,30 +219,35 @@ func (router Router) ServeDir(baseUrlPath string, dirPath string) {
 	for _, file := range files {
 
 		if file.IsDir() {
-			//TODO: Make recursive optional
-			router.ServeDir(baseUrlPath+file.Name()+"/", dirPath+file.Name()+"/")
+			if options.Recursive {
+				router.ServeDir(baseUrlPath+file.Name()+"/", dirPath+file.Name()+"/", options)
+			}
+
+			continue
 		}
 
 		fileName := file.Name()
 		fileExtention := filepath.Ext(fileName)
 
-		// TODO: Make type check Optional
-		if fileExtention != ".css" {
+		if len(options.IncludedExtensions) > 0 && !slices.Contains(options.IncludedExtensions, fileExtention) {
 			continue
 		}
 
 		filePath := absPath + "/" + fileName
 
-		// TODO: Add Options to include or exclude extenstions in route name
 		route := baseUrlPath + fileName
 
-		options := &RouteOptions{}
+		if !options.RoutePathContainsExtension {
+			route = route[:len(route)-len(fileExtention)]
+		}
+
+		routeOptions := &RouteOptions{}
 
 		if route == "/index/" {
 			route = "/"
-			options.PreHandlerMiddleware = []MiddlewareHandler{middleware.CheckAuthorization}
+			routeOptions.PreHandlerMiddleware = []MiddlewareHandler{middleware.CheckAuthorization}
 		}
 
-		router.Serve(route, filePath, options)
+		router.Serve(route, filePath, routeOptions)
 	}
 }

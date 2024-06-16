@@ -17,8 +17,26 @@ func HTMLRouter() *http.ServeMux {
 		ExactPathsOnly: true,
 	})
 
-	router.ServeDir("/", "view/pages/")
+	// Serve Styles for Pages
+	router.ServeDir("/", "view/pages/", &Router.ServeDirOptions{
+		IncludedExtensions:         []string{".css"},
+		Recursive:                  true,
+		RoutePathContainsExtension: true,
+	})
 
+	// Serve Styles for Components
+	router.ServeDir("/", "view/components/", &Router.ServeDirOptions{
+		IncludedExtensions:         []string{".css"},
+		Recursive:                  true,
+		RoutePathContainsExtension: true,
+	})
+
+	router.ServeDir("/assets/", "assets/", &Router.ServeDirOptions{
+		Recursive:                  true,
+		RoutePathContainsExtension: true,
+	})
+
+	//TODO: Make Templ Handler
 	router.Mux.Handle("/", templ.Handler(home.Index()))
 	router.Mux.Handle("/signup/", templ.Handler(signup.Signup()))
 	router.Post("/htmx/signup", html.SignUpHtmx, &Router.RouteOptions{})

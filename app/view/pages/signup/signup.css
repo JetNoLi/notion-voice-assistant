@@ -56,12 +56,11 @@
     margin: 2.5%;
 }
 
-
 .background {
     flex: 1;
     height: 80%;
     padding: 2.5%;
-    background-image: url("https://slowself.co/wp-content/uploads/2020/06/How-to-use-Notion-to-organize-your-life-1.png");
+    background-image: url("/assets/images/notion-background.png");
     border-radius: 12px;
 }
 
