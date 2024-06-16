@@ -1,0 +1,44 @@
+package pages
+
+import "github.com/jetnoli/notion-voice-assistant/view/components/page"
+
+templ Login() {
+	@components.Page(&components.PageProps{
+		StyleSheetPath: "login.css",
+	}) {
+		<div class="title">
+			<h1>
+				Notion Voice Assistant
+			</h1>
+		</div>
+		<div class="display">
+			<div class="form">
+				<div class="row form-content">
+					<form type="submit" hx-ext="json-enc" hx-post="/htmx/signin/" hx-target="this">
+						<div class="title">
+							<h2>Log In </h2>
+						</div>
+						<div class="input">
+							<label for="email">
+								Email
+							</label>
+							<input class="form-field" type="text" name="email"/>
+						</div>
+						<div class="input">
+							<label for="password">
+								Password
+							</label>
+							<input class="form-field" type="text" name="password"/>
+						</div>
+						<button type="submit">
+							<h3>Login </h3>
+						</button>
+					</form>
+				</div>
+			</div>
+			<div class="background">
+				<div class="background-image"></div>
+			</div>
+		</div>
+	}
+}

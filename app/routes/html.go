@@ -7,6 +7,7 @@ import (
 	html "github.com/jetnoli/notion-voice-assistant/handlers"
 
 	home "github.com/jetnoli/notion-voice-assistant/view/pages/home"
+	login "github.com/jetnoli/notion-voice-assistant/view/pages/login"
 	signup "github.com/jetnoli/notion-voice-assistant/view/pages/signup"
 
 	Router "github.com/jetnoli/notion-voice-assistant/wrappers/router"
@@ -39,6 +40,7 @@ func HTMLRouter() *http.ServeMux {
 	//TODO: Make Templ Handler
 	router.Mux.Handle("/", templ.Handler(home.Index()))
 	router.Mux.Handle("/signup/", templ.Handler(signup.Signup()))
+	router.Mux.Handle("/login/", templ.Handler(login.Login()))
 	router.Post("/htmx/signup", html.SignUpHtmx, &Router.RouteOptions{})
 	router.Post("/htmx/signin", html.SignInHtmx, &Router.RouteOptions{})
 

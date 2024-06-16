@@ -13,31 +13,18 @@ templ Page(props *PageProps) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>Notion Voice Assistant</title>
 			<script src="../assets/htmx/index.js"></script>
-			// <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
 			<script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+			<link type="text/css" rel="stylesheet" href="/page/page.css/"/>
 			if (props.StyleSheetPath != "") {
 				<link type="text/css" rel="stylesheet" href={ props.StyleSheetPath }/>
 			}
 		</head>
-		<style>
-	
-	       	* {
-	       	    padding: 0;
-	       	    margin: 0;
-	       	}
-
-	       	html,
-	       	body {
-	       	    width: 100%;
-	       	    height: 100%;
-	       	    background-color: rgb(233, 238, 240);
-	       	}
-
-		</style>
 		<body>
-			@components.Layout() {
-				{ children... }
-			}
+			<div class="page-container">
+				@components.Layout() {
+					{ children... }
+				}
+			</div>
 		</body>
 	</html>
 }

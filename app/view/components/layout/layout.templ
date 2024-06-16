@@ -1,11 +1,9 @@
 package components
 
 templ Layout() {
-	<style>
-    </style>
-	<div>
-		@Header("My Header")
+	@Header("My Header")
+	<div style="height: calc(100% - 60px - 120px)">
 		{ children... }
-		@Footer()
 	</div>
+	@Footer()
 }

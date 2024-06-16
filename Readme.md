@@ -5,6 +5,7 @@ TODO: Add Readme
 * All Errors should be Lowercase
 
 * Improve Env Var Handling
+* CSS Variables
 * Look at Base32 vs Base64 Encoding
 * Figure out best way to pass status code down to handlers from services
 * Figure out how context works with the DB
