@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/a-h/templ"
 	"github.com/jetnoli/notion-voice-assistant/middleware"
 	"github.com/jetnoli/notion-voice-assistant/utils"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
@@ -130,6 +131,7 @@ func (router Router) HandleFunc(path string, handler http.HandlerFunc, options *
 		rCtxCopy, cancel := context.WithCancel(r.Context())
 		*r = *r.WithContext(context.WithValue(rCtxCopy, utils.CancelRequestKey, cancel))
 
+		fmt.Println("Serving path ", path)
 		router.ExecuteWithMiddleware(&w, r, handler, options)
 
 	})
@@ -249,5 +251,25 @@ func (router Router) ServeDir(baseUrlPath string, dirPath string, options *Serve
 		}
 
 		router.Serve(route, filePath, routeOptions)
+	}
+}
+
+// Non Lib Specific
+type TemplPage struct {
+	PageComponent templ.Component
+	Options       *RouteOptions
+}
+
+func (router Router) ServeTempl(pageMap map[string]*TemplPage) {
+	for route, page := range pageMap {
+
+		router.Get(route, func(w http.ResponseWriter, r *http.Request) {
+			err := page.PageComponent.Render(r.Context(), w)
+
+			if err != nil {
+				http.Error(w, "error serving page "+err.Error(), http.StatusInternalServerError)
+			}
+
+		}, page.Options)
 	}
 }

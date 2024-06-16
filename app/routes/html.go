@@ -3,8 +3,8 @@ package routes
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	html "github.com/jetnoli/notion-voice-assistant/handlers"
+	"github.com/jetnoli/notion-voice-assistant/middleware"
 
 	home "github.com/jetnoli/notion-voice-assistant/view/pages/home"
 	login "github.com/jetnoli/notion-voice-assistant/view/pages/login"
@@ -37,10 +37,21 @@ func HTMLRouter() *http.ServeMux {
 		RoutePathContainsExtension: true,
 	})
 
-	//TODO: Make Templ Handler
-	router.Mux.Handle("/", templ.Handler(home.Index()))
-	router.Mux.Handle("/signup/", templ.Handler(signup.Signup()))
-	router.Mux.Handle("/login/", templ.Handler(login.Login()))
+	router.ServeTempl(map[string]*Router.TemplPage{
+		"/": {
+			PageComponent: home.Index(),
+			Options: &Router.RouteOptions{
+				PreHandlerMiddleware: []Router.MiddlewareHandler{middleware.CheckAuthorization},
+			},
+		},
+		"/login": {
+			PageComponent: login.Login(),
+		},
+		"/signup": {
+			PageComponent: signup.Signup(),
+		},
+	})
+
 	router.Post("/htmx/signup", html.SignUpHtmx, &Router.RouteOptions{})
 	router.Post("/htmx/signin", html.SignInHtmx, &Router.RouteOptions{})
 
