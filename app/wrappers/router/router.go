@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/jetnoli/notion-voice-assistant/middleware"
 	"github.com/jetnoli/notion-voice-assistant/utils"
@@ -33,7 +32,6 @@ type Router struct {
 }
 
 // TODO: Add Global Response Headers
-// TODO: Middleware and Handlers should also return errors, to trigger cancellation?
 func CreateRouter(path string, options RouterOptions) *Router {
 	router := &Router{}
 
@@ -129,7 +127,7 @@ func (router Router) ExecuteWithMiddleware(w *http.ResponseWriter, r *http.Reque
 func (router Router) HandleFunc(path string, handler http.HandlerFunc, options *RouteOptions) {
 	router.Mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		rCtxCopy, cancel := context.WithCancel(r.Context())
-		*r = *r.WithContext(context.WithValue(rCtxCopy, "cancel_request", cancel))
+		*r = *r.WithContext(context.WithValue(rCtxCopy, utils.CancelRequestKey, cancel))
 
 		router.ExecuteWithMiddleware(&w, r, handler, options)
 
@@ -206,14 +204,24 @@ func (router Router) ServeDir(baseUrlPath string, dirPath string) {
 	}
 
 	for _, file := range files {
+
 		if file.IsDir() {
-			continue
+			//TODO: Make recursive optional
+			router.ServeDir(baseUrlPath+file.Name()+"/", dirPath+file.Name()+"/")
 		}
 
 		fileName := file.Name()
+		fileExtention := filepath.Ext(fileName)
+
+		// TODO: Make type check Optional
+		if fileExtention != ".css" {
+			continue
+		}
+
 		filePath := absPath + "/" + fileName
 
-		route := baseUrlPath + strings.Split(fileName, ".")[0] + "/"
+		// TODO: Add Options to include or exclude extenstions in route name
+		route := baseUrlPath + fileName
 
 		options := &RouteOptions{}
 

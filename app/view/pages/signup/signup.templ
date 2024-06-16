@@ -1,0 +1,70 @@
+package pages
+
+import "github.com/jetnoli/notion-voice-assistant/view/components/page"
+
+templ Signup() {
+	@components.Page(&components.PageProps{
+		StyleSheetPath: "signup.css",
+	}) {
+		<div class="container">
+			<div class="title">
+				<h1>
+					Notion Voice Assistant
+				</h1>
+			</div>
+			<div class="display">
+				<div class="form">
+					<div class="row">
+						<h2>Sign Up</h2>
+					</div>
+					<div class="row form-content">
+						<form
+							type="submit"
+							hx-ext="json-enc"
+							hx-post="/htmx/signup/"
+							hx-target="this"
+							hx-params="not confirm_password"
+						>
+							<div class="input">
+								<label for="username">
+									Username
+								</label>
+								<input required hx-validate="true" class="form-field" type="text" name="username"/>
+							</div>
+							<div class="input">
+								<label for="email">
+									Email
+								</label>
+								<input required hx-validate="true" class="form-field" type="email" name="email"/>
+							</div>
+							<div class="input">
+								<label for="password">
+									Password
+								</label>
+								<input required hx-validate="true" class="form-field" type="password" name="password"/>
+							</div>
+							<div class="input">
+								<label for="confirm_password">
+									Confirm Password
+								</label>
+								<input
+									required
+									hx-validate="true"
+									class="form-field"
+									type="password"
+									name="confirm_password"
+								/>
+							</div>
+							<button type="submit">
+								<h3>Sign Up</h3>
+							</button>
+						</form>
+					</div>
+				</div>
+				<div class="background">
+					<div class="background-image"></div>
+				</div>
+			</div>
+		</div>
+	}
+}
