@@ -13,6 +13,14 @@
     gap: 5%;
     justify-content: center;
     width: 100%;
+    flex: 1
+}
+
+.example-container {
+    display: flex;
+    flex: 3;
+    justify-content: space-evenly;
+    flex-direction: column;
 }
 
 .success {

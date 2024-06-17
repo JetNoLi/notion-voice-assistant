@@ -1,0 +1,21 @@
+package components
+
+css recorderContainer() {
+	width: 45px;
+	height: 45px;
+	border-radius: calc(45px/2);
+	background-color: red;
+}
+
+css container() {
+	display: flex;
+	gap: 2.5rem;
+}
+
+templ AudioRecorder(fileElementId string) {
+	<script src="../assets/scripts/recorder.js"></script>
+	<div class={ container() } onClick="createRecorder()">
+		<div class={ recorderContainer() }></div>
+		<audio id="audio-recorder"></audio>
+	</div>
+}

@@ -1,9 +1,12 @@
 package home 
 
-import "github.com/jetnoli/notion-voice-assistant/view/components/page"
+import (
+	controls "github.com/jetnoli/notion-voice-assistant/view/components/controls"
+	page "github.com/jetnoli/notion-voice-assistant/view/components/page"
+)
 
 templ Page() {
-	@components.Page(&components.PageProps{
+	@page.Page(&page.PageProps{
 		StyleSheetPath: "home/home.css",
 	}) {
 		<div class="container">
@@ -20,8 +23,9 @@ templ Page() {
 					<span htmx-indicator>Checking Downstreams... </span>
 				</div>
 			</div>
-			<div>
+			<div class="example-container">
 				<h3>Basic Example </h3>
+				@controls.AudioRecorder("audio-file")
 				<form
 					id="form"
 					hx-request="credentials:true"
@@ -30,7 +34,7 @@ templ Page() {
 					hx-trigger="submit"
 					action="submit"
 				>
-					<input type="file" name="audio_file"/>
+					<input type="file" name="audio_file" id="audio-file"/>
 					<button type="submit">
 						Submit
 					</button>
