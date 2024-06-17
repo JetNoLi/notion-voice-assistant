@@ -9,8 +9,6 @@ import (
 	"github.com/jetnoli/notion-voice-assistant/view/pages/signup"
 )
 
-// TODO: Allow a way to specify which routes are restricted when serving static html
-
 func SignUpHtmx(w http.ResponseWriter, r *http.Request) {
 
 	userDetails := &services.SignUpRequestBody{}
@@ -69,17 +67,4 @@ func SignInHtmx(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 	w.Header().Set("HX-Redirect", "/")
-
-	err = signup.Success(user.Username).Render(r.Context(), w)
-
-	if err != nil {
-		http.Error(w, "error returning file: \n"+err.Error(), http.StatusInternalServerError)
-	}
-
 }
-
-// func Takes Generic I & D
-// Accepts :
-//	- Service which Takes I as args
-//  	- Returns D, error
-//	- Function, which maps html data key -> html data, based on Generic D
