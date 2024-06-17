@@ -3,12 +3,12 @@ package routes
 import (
 	"net/http"
 
-	html "github.com/jetnoli/notion-voice-assistant/handlers"
+	"github.com/jetnoli/notion-voice-assistant/handlers"
 	"github.com/jetnoli/notion-voice-assistant/middleware"
 
-	home "github.com/jetnoli/notion-voice-assistant/view/pages/home"
-	login "github.com/jetnoli/notion-voice-assistant/view/pages/login"
-	signup "github.com/jetnoli/notion-voice-assistant/view/pages/signup"
+	"github.com/jetnoli/notion-voice-assistant/view/pages/home"
+	"github.com/jetnoli/notion-voice-assistant/view/pages/login"
+	"github.com/jetnoli/notion-voice-assistant/view/pages/signup"
 
 	Router "github.com/jetnoli/notion-voice-assistant/wrappers/router"
 )
@@ -39,21 +39,21 @@ func HTMLRouter() *http.ServeMux {
 
 	router.ServeTempl(map[string]*Router.TemplPage{
 		"/": {
-			PageComponent: home.Index(),
+			PageComponent: home.Page(),
 			Options: &Router.RouteOptions{
 				PreHandlerMiddleware: []Router.MiddlewareHandler{middleware.CheckAuthorization},
 			},
 		},
 		"/login": {
-			PageComponent: login.Login(),
+			PageComponent: login.Page(),
 		},
 		"/signup": {
-			PageComponent: signup.Signup(),
+			PageComponent: signup.Page(),
 		},
 	})
 
-	router.Post("/htmx/signup", html.SignUpHtmx, &Router.RouteOptions{})
-	router.Post("/htmx/signin", html.SignInHtmx, &Router.RouteOptions{})
+	router.Post("/htmx/signup", handlers.SignUpHtmx, &Router.RouteOptions{})
+	router.Post("/htmx/signin", handlers.SignInHtmx, &Router.RouteOptions{})
 
 	return router.Mux
 }

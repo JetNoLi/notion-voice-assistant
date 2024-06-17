@@ -4,6 +4,7 @@ import "github.com/jetnoli/notion-voice-assistant/view/components/layout"
 
 type PageProps struct {
 	StyleSheetPath string
+	Title          string
 }
 
 templ Page(props *PageProps) {
@@ -11,7 +12,13 @@ templ Page(props *PageProps) {
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<title>Notion Voice Assistant</title>
+			<title>
+				if props.Title != "" {
+					Notion Voice Assistant
+				} else {
+					{ props.Title }
+				}
+			</title>
 			<script src="../assets/htmx/index.js"></script>
 			<script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
 			<link type="text/css" rel="stylesheet" href="/page/page.css/"/>

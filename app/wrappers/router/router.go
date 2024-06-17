@@ -9,7 +9,6 @@ import (
 	"slices"
 
 	"github.com/a-h/templ"
-	"github.com/jetnoli/notion-voice-assistant/middleware"
 	"github.com/jetnoli/notion-voice-assistant/utils"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
 )
@@ -171,7 +170,7 @@ func (router Router) Patch(path string, handler http.HandlerFunc, options *Route
 
 // Templating
 
-// Serve html at the given filepath relative to app
+// Serve file at the given filepath relative to app
 func (router Router) Serve(path string, filePath string, options *RouteOptions) {
 	route := router.CreatePath(path, "GET")
 
@@ -243,14 +242,7 @@ func (router Router) ServeDir(baseUrlPath string, dirPath string, options *Serve
 			route = route[:len(route)-len(fileExtention)]
 		}
 
-		routeOptions := &RouteOptions{}
-
-		if route == "/index/" {
-			route = "/"
-			routeOptions.PreHandlerMiddleware = []MiddlewareHandler{middleware.CheckAuthorization}
-		}
-
-		router.Serve(route, filePath, routeOptions)
+		router.Serve(route, filePath, &RouteOptions{})
 	}
 }
 

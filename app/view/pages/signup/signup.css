@@ -38,6 +38,7 @@
     border: 1px solid groove;
     border-radius: 8px;
     height: 80%;
+    width: 100%;
     flex-direction: column;
     justify-content: space-evenly;
     align-items: center;
@@ -46,6 +47,13 @@
     padding: 2.5%;
     gap: 5%;
     border-radius: 12px;
+}
+
+form {
+    width: 100%;
+    gap: 1rem;
+    display: flex;
+    flex-direction: column;
 }
 
 .form-content {

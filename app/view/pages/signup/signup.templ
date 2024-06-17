@@ -1,8 +1,8 @@
-package pages
+package signup 
 
 import "github.com/jetnoli/notion-voice-assistant/view/components/page"
 
-templ Signup() {
+templ Page() {
 	@components.Page(&components.PageProps{
 		StyleSheetPath: "signup.css",
 	}) {
@@ -67,4 +67,13 @@ templ Signup() {
 			</div>
 		</div>
 	}
+}
+
+templ Success(username string) {
+	<div class="success">
+		<p>
+			User { username }, has Signed up Successfully!
+		</p>
+		<a href="/">Continue </a>
+	</div>
 }

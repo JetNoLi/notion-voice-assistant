@@ -1,16 +1,22 @@
-package pages
+package home 
 
 import "github.com/jetnoli/notion-voice-assistant/view/components/page"
 
-// TODO: Make stylesheet
-templ Index() {
-	@components.Page(&components.PageProps{}) {
-		<div style="display:flex; flex-direction: column; align-items: center; width: 100%;">
+templ Page() {
+	@components.Page(&components.PageProps{
+		StyleSheetPath: "home/home.css",
+	}) {
+		<div class="container">
 			<div
-				style="display: flex; flex-direction: row; align-items: center; gap: 5%; justify-content: center; width: 100%;"
+				class="health-check-container"
 			>
 				<h2>Health Check</h2>
-				<div id="health-check" hx-trigger="load once" hx-target="this" hx-swap="innerHTML" hx-get="/health">
+				<div
+					id="health-check"
+					hx-trigger="load once"
+					hx-swap="innerHTML"
+					hx-get="/health"
+				>
 					<span htmx-indicator>Checking Downstreams... </span>
 				</div>
 			</div>
