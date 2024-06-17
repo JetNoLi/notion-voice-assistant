@@ -9,22 +9,22 @@ import (
 	"github.com/jetnoli/notion-voice-assistant/utils"
 )
 
-func Html(path string) (htmlData []byte, err error) {
+func ReadData(path string) (data []byte, err error) {
 	absPath, err := filepath.Abs(path)
 
 	if err != nil {
-		return htmlData, err
+		return data, err
 	}
 
-	htmlData, err = os.ReadFile(absPath)
+	data, err = os.ReadFile(absPath)
 
-	return htmlData, err
+	return data, err
 }
 
 // __keyname__ in html gets replaced with value in data map -> [keyname]: value
 // if any value in data, not injected or any value in html, not injected, will throw error
 func AndInjectHtml(path string, data map[string]string) (htmlData []byte, err error) {
-	rawHtmlData, err := Html(path)
+	rawHtmlData, err := ReadData(path)
 
 	if err != nil {
 		return htmlData, err

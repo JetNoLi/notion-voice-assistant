@@ -1,0 +1,35 @@
+package components
+
+import "github.com/jetnoli/notion-voice-assistant/view/components/layout"
+
+type PageProps struct {
+	StyleSheetPath string
+	Title          string
+}
+
+templ Page(props *PageProps) {
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>
+				if props.Title != "" {
+					Notion Voice Assistant
+				} else {
+					{ props.Title }
+				}
+			</title>
+			<script src="../assets/htmx/index.js"></script>
+			<script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+			<link type="text/css" rel="stylesheet" href="/page/page.css/"/>
+			if (props.StyleSheetPath != "") {
+				<link type="text/css" rel="stylesheet" href={ props.StyleSheetPath }/>
+			}
+		</head>
+		<body>
+			@components.Layout() {
+				{ children... }
+			}
+		</body>
+	</html>
+}

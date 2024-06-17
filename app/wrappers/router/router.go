@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+	"slices"
 
-	"github.com/jetnoli/notion-voice-assistant/middleware"
+	"github.com/a-h/templ"
 	"github.com/jetnoli/notion-voice-assistant/utils"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
 )
@@ -33,7 +33,6 @@ type Router struct {
 }
 
 // TODO: Add Global Response Headers
-// TODO: Middleware and Handlers should also return errors, to trigger cancellation?
 func CreateRouter(path string, options RouterOptions) *Router {
 	router := &Router{}
 
@@ -129,8 +128,9 @@ func (router Router) ExecuteWithMiddleware(w *http.ResponseWriter, r *http.Reque
 func (router Router) HandleFunc(path string, handler http.HandlerFunc, options *RouteOptions) {
 	router.Mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		rCtxCopy, cancel := context.WithCancel(r.Context())
-		*r = *r.WithContext(context.WithValue(rCtxCopy, "cancel_request", cancel))
+		*r = *r.WithContext(context.WithValue(rCtxCopy, utils.CancelRequestKey, cancel))
 
+		fmt.Println("Serving path ", path)
 		router.ExecuteWithMiddleware(&w, r, handler, options)
 
 	})
@@ -170,29 +170,41 @@ func (router Router) Patch(path string, handler http.HandlerFunc, options *Route
 
 // Templating
 
-// Serve html at the given filepath relative to app
+// Serve file at the given filepath relative to app
 func (router Router) Serve(path string, filePath string, options *RouteOptions) {
 	route := router.CreatePath(path, "GET")
 
 	router.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		html, err := serve.Html(filePath)
+		data, err := serve.ReadData(filePath)
 
 		if err != nil {
 			http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		w.Header().Set("Content-Type", http.DetectContentType(data))
+
 		//TODO: Error Handling
-		w.Write(html)
+		_, err = w.Write(data)
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error serving file: %s", filePath), http.StatusInternalServerError)
+		}
+
 	}, options)
 }
 
+type ServeDirOptions struct {
+	IncludedExtensions         []string
+	RoutePathContainsExtension bool
+	Recursive                  bool
+}
+
 // Serves all html in given directory relative to app
-// Ignores nested directories
 // Include trailing slash in dir name
-func (router Router) ServeDir(baseUrlPath string, dirPath string) {
+func (router Router) ServeDir(baseUrlPath string, dirPath string, options *ServeDirOptions) {
 	absPath, err := filepath.Abs(dirPath)
 
 	if err != nil {
@@ -206,22 +218,50 @@ func (router Router) ServeDir(baseUrlPath string, dirPath string) {
 	}
 
 	for _, file := range files {
+
 		if file.IsDir() {
+			if options.Recursive {
+				router.ServeDir(baseUrlPath+file.Name()+"/", dirPath+file.Name()+"/", options)
+			}
+
 			continue
 		}
 
 		fileName := file.Name()
-		filePath := absPath + "/" + fileName
+		fileExtention := filepath.Ext(fileName)
 
-		route := baseUrlPath + strings.Split(fileName, ".")[0] + "/"
-
-		options := &RouteOptions{}
-
-		if route == "/index/" {
-			route = "/"
-			options.PreHandlerMiddleware = []MiddlewareHandler{middleware.CheckAuthorization}
+		if len(options.IncludedExtensions) > 0 && !slices.Contains(options.IncludedExtensions, fileExtention) {
+			continue
 		}
 
-		router.Serve(route, filePath, options)
+		filePath := absPath + "/" + fileName
+
+		route := baseUrlPath + fileName
+
+		if !options.RoutePathContainsExtension {
+			route = route[:len(route)-len(fileExtention)]
+		}
+
+		router.Serve(route, filePath, &RouteOptions{})
+	}
+}
+
+// Non Lib Specific
+type TemplPage struct {
+	PageComponent templ.Component
+	Options       *RouteOptions
+}
+
+func (router Router) ServeTempl(pageMap map[string]*TemplPage) {
+	for route, page := range pageMap {
+
+		router.Get(route, func(w http.ResponseWriter, r *http.Request) {
+			err := page.PageComponent.Render(r.Context(), w)
+
+			if err != nil {
+				http.Error(w, "error serving page "+err.Error(), http.StatusInternalServerError)
+			}
+
+		}, page.Options)
 	}
 }

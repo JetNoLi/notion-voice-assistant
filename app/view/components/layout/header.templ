@@ -1,0 +1,33 @@
+package components 
+
+css headerContent() {
+	flex-direction: row;
+	width: 100%;
+	align-items: center;
+	height: 60px;
+	background-color: #b3d9ff;
+	padding: 1rem;
+}
+
+css headerCol() {
+	display: flex;
+	width: 100%;
+	height: 100%;
+	align-items: center;
+}
+
+css link() {
+	text-decoration: none;
+	color: inherit;
+}
+
+templ Header() {
+	<div class={ headerContent() }>
+		<div class={ headerCol() }>
+			<h1>
+				<a class={ link() } href="/">NVA</a>
+			</h1>
+		</div>
+		<div class={ headerCol() }></div>
+	</div>
+}

@@ -4,6 +4,7 @@ services:
       context: ./app
     depends_on:
       - whisper_api 
+      - db
     ports:
       - 3000:3000
     networks:
