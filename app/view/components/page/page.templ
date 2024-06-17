@@ -27,11 +27,9 @@ templ Page(props *PageProps) {
 			}
 		</head>
 		<body>
-			<div class="page-container">
-				@components.Layout() {
-					{ children... }
-				}
-			</div>
+			@components.Layout() {
+				{ children... }
+			}
 		</body>
 	</html>
 }

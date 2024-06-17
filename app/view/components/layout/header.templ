@@ -1,37 +1,33 @@
 package components 
 
-css header() {
-	height: 60px;
-	width: 100%;
-	display: fixed;
-	background-color: #b3d9ff;
-}
-
 css headerContent() {
-	display: flex;
 	flex-direction: row;
-	align-items: center;
 	width: 100%;
-	height: 100%;
+	align-items: center;
+	height: 60px;
+	background-color: #b3d9ff;
+	padding: 1rem;
 }
 
 css headerCol() {
 	display: flex;
-	flex: 1;
+	width: 100%;
 	height: 100%;
+	align-items: center;
+}
+
+css link() {
+	text-decoration: none;
+	color: inherit;
 }
 
 templ Header() {
-	<div class={ header() }>
-		<div class={ headerContent() }>
-			<div class={ headerCol() }>
-				<h1>
-					NVA
-				</h1>
-			</div>
-			<div class={ headerCol() }>
-				2
-			</div>
+	<div class={ headerContent() }>
+		<div class={ headerCol() }>
+			<h1>
+				<a class={ link() } href="/">NVA</a>
+			</h1>
 		</div>
+		<div class={ headerCol() }></div>
 	</div>
 }
