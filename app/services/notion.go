@@ -99,3 +99,20 @@ func CreateDatabaseItem[R any](databaseId string, itemData *ItemData) (item *R, 
 
 	return item, nil
 }
+
+func Test(db NotionDB) {
+	// Fetch Task DB
+	// Map DB to Object
+	// Fetch All Relations
+
+	// Get Audio
+	// Pass Info To Chat GPT
+	// Determine Best Fit for Each Field
+
+	// Create Item in DB
+	// Create a Type for Accepting Data
+	// Marshal Data to JSON
+	// Create Task
+
+	// Validate
+}
