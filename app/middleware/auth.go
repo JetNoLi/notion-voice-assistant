@@ -39,7 +39,5 @@ func DecodeToken(w *http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("userId ", userId)
-
 	*r = *r.Clone(context.WithValue(r.Context(), "userId", userId))
 }

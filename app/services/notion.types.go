@@ -1,6 +1,10 @@
 package services
 
-import "time"
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+)
 
 type NotionTask struct {
 	Archived  bool        `json:"archived"`
@@ -225,23 +229,23 @@ type NotionDB struct {
 		Type  string `json:"type"`
 	} `json:"icon"`
 
-	Archived       bool           `json:"archived"`
-	Cover          interface{}    `json:"cover"`
-	Description    []interface{}  `json:"description"`
-	ID             string         `json:"id"`
-	InTrash        bool           `json:"in_trash"`
-	IsInline       bool           `json:"is_inline"`
-	LastEditedTime time.Time      `json:"last_edited_time"`
-	Object         string         `json:"object"`
-	Parent         NotionDBParent `json:"parent"`
-	Properties     map[string]NotionDBProperty
-	PublicURL      interface{}   `json:"public_url"`
-	RequestID      string        `json:"request_id"`
-	Title          NotionDBTitle `json:"title"`
-	URL            string        `json:"url"`
+	Archived       bool                        `json:"archived"`
+	Cover          interface{}                 `json:"cover"`
+	Description    []interface{}               `json:"description"`
+	ID             string                      `json:"id"`
+	InTrash        bool                        `json:"in_trash"`
+	IsInline       bool                        `json:"is_inline"`
+	LastEditedTime time.Time                   `json:"last_edited_time"`
+	Object         string                      `json:"object"`
+	Parent         NotionDBParent              `json:"parent"`
+	Properties     map[string]NotionDBProperty `json:"properties"`
+	PublicURL      interface{}                 `json:"public_url"`
+	RequestID      string                      `json:"request_id"`
+	Title          []NotionTitleValue          `json:"title"`
+	URL            string                      `json:"url"`
 }
 
-type NotionDBTitle struct {
+type NotionTitleValue struct {
 	Annotations struct {
 		Bold          bool   `json:"bold"`
 		Code          bool   `json:"code"`
@@ -265,13 +269,60 @@ type NotionDBParent struct {
 }
 
 type NotionDBProperty struct {
-	ID    string      `json:"id"`
-	Name  string      `json:"name"`
-	Type  string      `json:"type"`
-	Value interface{} `json:"-"`
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Value any    `json:"data"`
+}
+
+// UnmarshalJSON custom unmarshaling for NotionProperty to handle dynamic structures.
+func (np *NotionDBProperty) UnmarshalJSON(data []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	np.ID = raw["id"].(string)
+	np.Name = raw["name"].(string)
+	np.Type = raw["type"].(string)
+
+	var val any = nil
+
+	// Store the raw value in the Value field for further processing
+	if np.Type == "multi_select" {
+		val = &NotionDBMultiSelectProp{}
+	} else if np.Type == "status" {
+		val = &NotionDBStatusProp{}
+	} else if np.Type == "select" {
+		val = &NotionDBSelectProp{}
+	} else if np.Type == "relation" {
+		val = &NotionDBRelationProp{}
+	} else if np.Type == "date" {
+		val = &NotionDBDateProp{}
+	} else if np.Type == "title" {
+		val = &NotionDBTitleProp{}
+	}
+
+	if val == nil {
+		fmt.Println("skipping", np.Type)
+		np.Value = raw[np.Type]
+		return nil
+	}
+
+	if err := json.Unmarshal(data, val); err != nil {
+		fmt.Println("failed type assertion status", err.Error())
+		np.Value = raw[np.Type]
+		return err
+	}
+
+	np.Value = val
+	return nil
 }
 
 type NotionDBRelationProp struct {
+	Relation NotionDBRelationPropValue `json:"relation"`
+}
+
+type NotionDBRelationPropValue struct {
 	DatabaseID   string `json:"database_id"`
 	DualProperty struct {
 		SyncedPropertyID   string `json:"synced_property_id"`
@@ -280,16 +331,31 @@ type NotionDBRelationProp struct {
 	Type string `json:"type"`
 }
 
+type NotionDBDateProp struct {
+	Date NotionDatePropValue
+}
+
+type NotionDatePropValue struct {
+	Start    string `json:"start"`
+	End      string `json:"end"`
+	TimeZone string `json:"time_zone"`
+}
+
 type NotionDBMultiSelectProp struct {
-	Options []NotionDBSelectPropOptions `json:"options"`
+	MultiSelect NotionDBSelectValue `json:"multi_select"`
 }
 
 type NotionDBSelectProp struct {
+	Select NotionDBSelectValue `json:"select"`
+}
+
+type NotionDBSelectValue struct {
 	Options []NotionDBSelectPropOptions `json:"options"`
 }
 
-type NotionDBTitleProp struct{}
-type NotionDBDateProp struct{}
+type NotionDBTitleProp struct {
+}
+
 type NotionDBRichTextProp struct{}
 
 type NotionDBStatusProp struct {
@@ -311,27 +377,6 @@ type NotionDBSelectPropOptions struct {
 	Name        string      `json:"name"`
 }
 
-// Pages
-
-// "properties": {
-// 	"Name": {
-// 		"title": [
-// 			{
-// 				"text": {
-// 					"content": "%s"
-// 				}
-// 			}
-// 		]
-// 	},
-// 	"Tags": {
-// 		"multi_select": [
-// 			{
-// 				"name": "Workout"
-// 			}
-// 		]
-// 	}
-
-// }
 // * Categories - Relation
 // * Sub Category - Relation
 // * Goals - Relation
@@ -339,27 +384,141 @@ type NotionDBSelectPropOptions struct {
 // * Project - Relation
 // * Name - Title
 // * Priority - Select
-// * Resource - Rich Text
 // * Start Date - Date
 // * Status - Status
 // * Tags - Multi Select
 
 // Skip On DB Property Types
+// * Resource - Rich Text v2 TODO:
 // * formula
 // * rollup
 // * last_edited_time
 // * created_time
 // * button
 
-type CreateNotionDBPageRequest struct {
+type NotionPage[Props any] struct {
+	Object         string    `json:"object"`
+	ID             string    `json:"id"`
+	CreatedTime    time.Time `json:"created_time"`
+	LastEditedTime time.Time `json:"last_edited_time"`
+	CreatedBy      struct {
+		Object string `json:"object"`
+		ID     string `json:"id"`
+	} `json:"created_by"`
+	LastEditedBy struct {
+		Object string `json:"object"`
+		ID     string `json:"id"`
+	} `json:"last_edited_by"`
+	Cover interface{} `json:"cover"`
+	Icon  struct {
+		Type  string `json:"type"`
+		Emoji string `json:"emoji"`
+	} `json:"icon"`
+	Parent struct {
+		Type       string `json:"type"`
+		DatabaseID string `json:"database_id"`
+	} `json:"parent"`
+	Archived   bool        `json:"archived"`
+	InTrash    bool        `json:"in_trash"`
+	Properties Props       `json:"properties"` //TODO: Add Props Typing
+	URL        string      `json:"url"`
+	PublicURL  interface{} `json:"public_url"`
+}
+
+type NotionPageRelationPropValue struct {
+	ID string `json:"id"`
+}
+
+type NotionPageProp[T any] struct {
+	ID             string      `json:"id"`
+	Type           string      `json:"type"`
+	HasMore        bool        `json:"has_more"`
+	Value          T           `json:"data"`
+	NextCursor     interface{} `json:"next_cursor"`
+	PageOrDatabase struct {
+	} `json:"page_or_database"`
+	DeveloperSurvey string `json:"developer_survey"`
+	RequestID       string `json:"request_id"`
+}
+
+type NotionPageRelationProp = NotionPageProp[[]NotionPageRelationPropValue]
+type NotionPageTitleProp = NotionPageProp[[]NotionTitleValue]
+
+type NotionCreatePageRequest[Props any] struct {
 	Parent struct {
 		DatabaseID string `json:"database_id"`
 	} `json:"parent"`
-	Icon struct {
+	Icon *struct {
 		Emoji string `json:"emoji"`
-	} `json:"icon"`
-	Properties map[string]struct {
-		Key map[string]struct {
-		} `json:"-"`
-	}
+	} `json:"icon,omitempty"`
+	Cover *struct {
+		External struct {
+			URL string `json:"url"`
+		} `json:"external"`
+	} `json:"cover,omitempty"`
+	Properties Props `json:"properties"`
+}
+
+func (npr *NotionCreatePageRequest[NotionTaskDBPageProps]) ToJSON() ([]byte, error) {
+	reqStr, err := json.Marshal(npr)
+
+	return reqStr, err
+}
+
+type NotionPageCreateNameProp struct {
+	Title []struct {
+		Text struct {
+			Content string `json:"content"`
+		} `json:"text"`
+	} `json:"title"`
+}
+
+type NotionPageCreateRichTextProp struct {
+	RichText []struct {
+		Text struct {
+			Content string `json:"content"`
+		} `json:"text"`
+	} `json:"rich_text"`
+}
+
+type NotionPageCreateMultiSelectProp struct {
+	MultiSelect []struct {
+		Name string `json:"name"`
+	} `json:"multi_select"`
+}
+
+type NotionPageCreateRelationProp struct {
+	Relation []struct {
+		ID string `json:"id"`
+	} `json:"relation"`
+}
+
+type NotionPageCreateSelectProp struct {
+	Select struct {
+		Name string `json:"name"`
+	} `json:"select"`
+}
+
+type NotionPageCreateStatusProp struct {
+	Status struct {
+		Name string `json:"name"`
+	} `json:"status"`
+}
+
+type NotionPageCreateDateProp struct {
+	Date NotionDatePropValue `json:"date"`
+}
+
+type NotionTaskDBPageProps struct {
+	Name        *NotionPageCreateNameProp        `json:"Name"`
+	Resource    *NotionPageCreateRichTextProp    `json:"Resource,omitempty"`
+	Tags        *NotionPageCreateMultiSelectProp `json:"Tags,omitempty"`
+	Categories  *NotionPageCreateRelationProp    `json:"Categories,omitempty"`
+	SubCategory *NotionPageCreateRelationProp    `json:"Sub Category,omitempty"`
+	Goals       *NotionPageCreateRelationProp    `json:"Goals,omitempty"`
+	Note        *NotionPageCreateRelationProp    `json:"Note,omitempty"`
+	Project     *NotionPageCreateRelationProp    `json:"Project,omitempty"`
+	Priority    *NotionPageCreateSelectProp      `json:"Priority,omitempty"`
+	StartDate   *NotionPageCreateDateProp        `json:"Start Date,omitempty"`
+	Status      *NotionPageCreateStatusProp      `json:"Status,omitempty"`
 }

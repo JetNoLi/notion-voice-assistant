@@ -43,10 +43,25 @@ func GetDatabaseById(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// func CreateTaskDummy(w http.ResponseWriter, r *http.Request) {
+// 	databaseId := config.NotionMainDbId
+
+// 	data, err := services.CreateDatabaseItem[any](databaseId, &services.ItemData{Title: "Planning 101", Status: "Planning"})
+
+// 	if err != nil {
+// 		w.WriteHeader(500)
+// 		w.Write([]byte(err.Error()))
+// 		return
+// 	}
+
+// 	w.Header().Add("Content-Type", "application/json")
+// 	json.NewEncoder(w).Encode(data)
+// }
+
 func CreateTask(w http.ResponseWriter, r *http.Request) {
 	databaseId := config.NotionMainDbId
 
-	data, err := services.CreateDatabaseItem[any](databaseId, &services.ItemData{Title: "Planning 101", Status: "Planning"})
+	data, err := services.GetAllRelatedPages(databaseId)
 
 	if err != nil {
 		w.WriteHeader(500)
@@ -56,4 +71,5 @@ func CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
+
 }
