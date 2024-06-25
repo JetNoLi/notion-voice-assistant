@@ -308,13 +308,13 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 	req.Add("categories", foreignDBProps["Categories"].PageData[0].ID)
 	req.Add("status", dbOptions["Status"].Options[0])
 
-	resp, err := CreateDatabaseItem[any](databaseId, &req.Req)
+	resp, err := CreateDatabaseItem[any](databaseId, &req.Builder.Req)
 
 	if err != nil {
 		return nil, err
 	}
 
-	jsonReq, err := req.Req.ToJSON()
+	jsonReq, err := req.Builder.Req.ToJSON()
 
 	if err != nil {
 		fmt.Println("could not parse to JSON")
@@ -328,12 +328,16 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 	}{Response: resp, Options: dbOptions, ForeignProps: foreignDBProps, Request: string(jsonReq)}, nil
 }
 
-type NotionCreateTaskRequestBuilder struct {
-	Req  *NotionCreateTaskRequest
+type NotionRequestBuilder[T any] struct {
+	Req  *T
 	errs []error
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddRelation(relation **NotionPageCreateRelationProp, relationId string) {
+type NotionCreateTaskRequestBuilder struct {
+	Builder *NotionRequestBuilder[NotionCreateTaskRequest]
+}
+
+func (builder *NotionRequestBuilder[any]) AddRelation(relation **NotionPageCreateRelationProp, relationId string) {
 
 	if *relation == nil {
 		(*relation) = &NotionPageCreateRelationProp{
@@ -345,7 +349,7 @@ func (builder *NotionCreateTaskRequestBuilder) AddRelation(relation **NotionPage
 	fmt.Println("add rleation", (*relation).Relation)
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddMultiSelect(multiSelect **NotionPageCreateMultiSelectProp, option string) {
+func (builder *NotionRequestBuilder[any]) AddMultiSelect(multiSelect **NotionPageCreateMultiSelectProp, option string) {
 
 	if *multiSelect == nil {
 		*multiSelect = &NotionPageCreateMultiSelectProp{
@@ -356,7 +360,7 @@ func (builder *NotionCreateTaskRequestBuilder) AddMultiSelect(multiSelect **Noti
 	(*multiSelect).MultiSelect = append((*multiSelect).MultiSelect, NotionMultiSelect{Name: &option})
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddSelect(sel **NotionPageCreateSelectProp, option string) {
+func (builder *NotionRequestBuilder[any]) AddSelect(sel **NotionPageCreateSelectProp, option string) {
 
 	if *sel == nil {
 		*sel = &NotionPageCreateSelectProp{}
@@ -367,7 +371,7 @@ func (builder *NotionCreateTaskRequestBuilder) AddSelect(sel **NotionPageCreateS
 	}
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddStatus(status **NotionPageCreateStatusProp, option string) {
+func (builder *NotionRequestBuilder[any]) AddStatus(status **NotionPageCreateStatusProp, option string) {
 
 	if *status == nil {
 		*status = &NotionPageCreateStatusProp{}
@@ -378,7 +382,7 @@ func (builder *NotionCreateTaskRequestBuilder) AddStatus(status **NotionPageCrea
 	}
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddDate(sel **NotionPageCreateDateProp, date string) {
+func (builder *NotionRequestBuilder[any]) AddDate(sel **NotionPageCreateDateProp, date string) {
 
 	if *sel == nil {
 		*sel = &NotionPageCreateDateProp{}
@@ -389,7 +393,7 @@ func (builder *NotionCreateTaskRequestBuilder) AddDate(sel **NotionPageCreateDat
 	}
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddTitle(name **NotionPageCreateNameProp, title string) {
+func (builder *NotionRequestBuilder[any]) AddTitle(name **NotionPageCreateNameProp, title string) {
 	if *name == nil {
 		*name = &NotionPageCreateNameProp{
 			Title: make([]NotionText, 1),
@@ -403,11 +407,17 @@ func (builder *NotionCreateTaskRequestBuilder) AddTitle(name **NotionPageCreateN
 	}
 }
 
-func (builder *NotionCreateTaskRequestBuilder) Add(option string, val string) {
-	if builder.Req == nil {
-		builder.Req = &NotionCreateTaskRequest{}
+func (nb *NotionCreateTaskRequestBuilder) Add(option string, val string) {
+
+	if nb.Builder == nil {
+		nb.Builder = &NotionRequestBuilder[NotionCreateTaskRequest]{}
 	}
 
+	if nb.Builder.Req == nil {
+		nb.Builder.Req = &NotionCreateTaskRequest{}
+	}
+
+	builder := nb.Builder
 	args := builder.Req
 
 	fmt.Println("args", args, option)
@@ -474,6 +484,6 @@ func (builder *NotionCreateTaskRequestBuilder) Add(option string, val string) {
 	}
 }
 
-func (builder *NotionCreateTaskRequestBuilder) Error(option string, val string) []error {
-	return builder.errs
+func (nb *NotionCreateTaskRequestBuilder) Error(option string, val string) []error {
+	return nb.Builder.errs
 }
