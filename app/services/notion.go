@@ -296,30 +296,19 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 				return nil, fmt.Errorf("error processing title")
 			}
 
-			// fmt.Println(val)
 		} else {
-			// fmt.Println("skip", prop.Type)
+			fmt.Println("skip", prop.Type)
 		}
 	}
 
-	args := &NotionCreatePageRequest[NotionTaskDBPageProps]{}
+	req := NotionCreateTaskRequestBuilder{}
 
-	args.Parent.DatabaseID = db.ID
-	args.Properties.Name = &NotionPageCreateNameProp{
-		Title: make([]struct {
-			Text struct {
-				Content string "json:\"content\""
-			} "json:\"text\""
-		}, 1)}
-	args.Properties.Name.Title[0].Text.Content = "New Test Task"
-	args.Properties.Categories = &NotionPageCreateRelationProp{
-		Relation: make([]struct {
-			ID string "json:\"id\""
-		}, 1),
-	}
-	args.Properties.Categories.Relation[0].ID = foreignDBProps["Categories"].PageData[0].ID
+	req.Add("db", db.ID)
+	req.Add("name", "Page with Builder")
+	req.Add("categories", foreignDBProps["Categories"].PageData[0].ID)
+	req.Add("status", dbOptions["Status"].Options[0])
 
-	resp, err := CreateDatabaseItem[any](databaseId, &args)
+	resp, err := CreateDatabaseItem[any](databaseId, &req.Req)
 
 	if err != nil {
 		return nil, err
@@ -331,4 +320,142 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 		ForeignProps any
 	}{Response: resp, Options: dbOptions, ForeignProps: foreignDBProps}, nil
 
+}
+
+type NotionCreateTaskRequestBuilder struct {
+	Req  *NotionCreateTaskRequest
+	errs []error
+}
+
+func (builder *NotionCreateTaskRequestBuilder) AddRelation(relation *NotionPageCreateRelationProp, relationId string) {
+
+	if relation == nil {
+		relation = &NotionPageCreateRelationProp{
+			Relation: make([]NotionRelation, 0),
+		}
+	}
+
+	relation.Relation = append(relation.Relation, NotionRelation{ID: relationId})
+}
+
+func (builder *NotionCreateTaskRequestBuilder) AddMultiSelect(multiSelect *NotionPageCreateMultiSelectProp, option string) {
+
+	if multiSelect == nil {
+		multiSelect = &NotionPageCreateMultiSelectProp{
+			MultiSelect: make([]NotionMultiSelect, 0),
+		}
+	}
+
+	multiSelect.MultiSelect = append(multiSelect.MultiSelect, NotionMultiSelect{Name: option})
+}
+
+func (builder *NotionCreateTaskRequestBuilder) AddSelect(sel *NotionPageCreateSelectProp, option string) {
+
+	if sel == nil {
+		sel = &NotionPageCreateSelectProp{}
+	}
+
+	sel.Select = NotionSelect{
+		Name: option,
+	}
+}
+
+func (builder *NotionCreateTaskRequestBuilder) AddStatus(status *NotionPageCreateStatusProp, option string) {
+
+	if status == nil {
+		status = &NotionPageCreateStatusProp{}
+	}
+
+	status.Status = NotionStatus{
+		Name: option,
+	}
+}
+
+func (builder *NotionCreateTaskRequestBuilder) AddDate(sel *NotionPageCreateDateProp, date string) {
+
+	if sel == nil {
+		sel = &NotionPageCreateDateProp{}
+	}
+
+	sel.Date = NotionDatePropValue{
+		Start: date,
+	}
+}
+
+func (builder *NotionCreateTaskRequestBuilder) Add(option string, val string) {
+	if builder.Req == nil {
+		builder.Req = &NotionCreateTaskRequest{}
+	}
+
+	args := builder.Req
+
+	switch option {
+	case "db":
+		{
+			// TODO: assert Type Correctly
+			args.Parent.DatabaseID = val
+		}
+	case "categories":
+		{
+			//TODO: allow adding multiple
+			builder.AddRelation(builder.Req.Properties.Categories, val)
+		}
+	case "sub_category":
+		{
+			builder.AddRelation(builder.Req.Properties.SubCategory, val)
+		}
+	case "status":
+		{
+			args.Properties.Status = &NotionPageCreateStatusProp{
+				Status: NotionStatus{
+					Name: val,
+				},
+			}
+		}
+
+	case "project":
+		{
+			builder.AddRelation(builder.Req.Properties.Project, val)
+		}
+	case "priority":
+		{
+			args.Properties.Priority = &NotionPageCreateSelectProp{
+				Select: NotionSelect{
+					Name: val,
+				},
+			}
+		}
+	case "name":
+		{
+			//TODO: Turn into a add or Set Title
+			args.Properties.Name = &NotionPageCreateNameProp{
+				Title: make([]NotionText, 1)}
+
+			args.Properties.Name.Title[0].Text.Content = val
+		}
+	case "start_date":
+		{
+			args.Properties.StartDate = &NotionPageCreateDateProp{
+				Date: NotionDatePropValue{
+					Start: val,
+				},
+			}
+		}
+	case "tags":
+		{
+			builder.AddMultiSelect(args.Properties.Tags, val)
+		}
+	// TODO: Add In Resource Case
+	// case "resource": {
+
+	// }
+	case "default":
+		{
+			builder.errs = append(builder.errs, fmt.Errorf("invalid option type provided %s, only the supported types are allowed:\n 'multi_select', 'status', 'relation', ', select', 'date', 'name'", option))
+		}
+	}
+}
+
+func (builder *NotionCreateTaskRequestBuilder) Error(option string, val string) []error {
+	return builder.errs
 }

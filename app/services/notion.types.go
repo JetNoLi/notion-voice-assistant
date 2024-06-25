@@ -337,8 +337,8 @@ type NotionDBDateProp struct {
 
 type NotionDatePropValue struct {
 	Start    string `json:"start"`
-	End      string `json:"end"`
-	TimeZone string `json:"time_zone"`
+	End      string `json:"end,omitempty"`
+	TimeZone string `json:"time_zone,omitempty"` //TODO: Make sure adding date works?
 }
 
 type NotionDBMultiSelectProp struct {
@@ -444,6 +444,8 @@ type NotionPageProp[T any] struct {
 type NotionPageRelationProp = NotionPageProp[[]NotionPageRelationPropValue]
 type NotionPageTitleProp = NotionPageProp[[]NotionTitleValue]
 
+type NotionCreateTaskRequest = NotionCreatePageRequest[NotionTaskDBPageProps]
+
 type NotionCreatePageRequest[Props any] struct {
 	Parent struct {
 		DatabaseID string `json:"database_id"`
@@ -466,43 +468,51 @@ func (npr *NotionCreatePageRequest[NotionTaskDBPageProps]) ToJSON() ([]byte, err
 }
 
 type NotionPageCreateNameProp struct {
-	Title []struct {
-		Text struct {
-			Content string `json:"content"`
-		} `json:"text"`
-	} `json:"title"`
+	Title []NotionText `json:"title"`
+}
+
+type NotionText struct {
+	Text NotionContent `json:"text"`
+}
+
+type NotionContent struct {
+	Content string `json:"content"`
 }
 
 type NotionPageCreateRichTextProp struct {
-	RichText []struct {
-		Text struct {
-			Content string `json:"content"`
-		} `json:"text"`
-	} `json:"rich_text"`
+	RichText []NotionText `json:"rich_text"`
 }
 
 type NotionPageCreateMultiSelectProp struct {
-	MultiSelect []struct {
-		Name string `json:"name"`
-	} `json:"multi_select"`
+	MultiSelect []NotionMultiSelect `json:"multi_select"`
+}
+
+type NotionMultiSelect struct {
+	Name string `json:"name"`
 }
 
 type NotionPageCreateRelationProp struct {
-	Relation []struct {
-		ID string `json:"id"`
-	} `json:"relation"`
+	Relation []NotionRelation `json:"relation"`
+}
+
+type NotionRelation struct {
+	ID string `json:"id"`
 }
 
 type NotionPageCreateSelectProp struct {
-	Select struct {
-		Name string `json:"name"`
-	} `json:"select"`
+	Select NotionSelect `json:"select"`
+}
+
+type NotionSelect struct {
+	Name string `json:"name"`
 }
 
 type NotionPageCreateStatusProp struct {
-	Status struct {
-		Name string `json:"name"`
-	} `json:"status"`
+	Status NotionStatus `json:"status"`
+}
+
+type NotionStatus struct {
+	Name string `json:"name"`
 }
 
 type NotionPageCreateDateProp struct {
