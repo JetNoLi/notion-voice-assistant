@@ -314,12 +314,18 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 		return nil, err
 	}
 
+	jsonReq, err := req.Req.ToJSON()
+
+	if err != nil {
+		fmt.Println("could not parse to JSON")
+	}
+
 	return struct {
 		Response     any
 		Options      any
 		ForeignProps any
-	}{Response: resp, Options: dbOptions, ForeignProps: foreignDBProps}, nil
-
+		Request      any
+	}{Response: resp, Options: dbOptions, ForeignProps: foreignDBProps, Request: string(jsonReq)}, nil
 }
 
 type NotionCreateTaskRequestBuilder struct {
@@ -327,58 +333,73 @@ type NotionCreateTaskRequestBuilder struct {
 	errs []error
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddRelation(relation *NotionPageCreateRelationProp, relationId string) {
+func (builder *NotionCreateTaskRequestBuilder) AddRelation(relation **NotionPageCreateRelationProp, relationId string) {
 
-	if relation == nil {
-		relation = &NotionPageCreateRelationProp{
+	if *relation == nil {
+		(*relation) = &NotionPageCreateRelationProp{
 			Relation: make([]NotionRelation, 0),
 		}
 	}
 
-	relation.Relation = append(relation.Relation, NotionRelation{ID: relationId})
+	(*relation).Relation = append((*relation).Relation, NotionRelation{ID: relationId})
+	fmt.Println("add rleation", (*relation).Relation)
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddMultiSelect(multiSelect *NotionPageCreateMultiSelectProp, option string) {
+func (builder *NotionCreateTaskRequestBuilder) AddMultiSelect(multiSelect **NotionPageCreateMultiSelectProp, option string) {
 
-	if multiSelect == nil {
-		multiSelect = &NotionPageCreateMultiSelectProp{
+	if *multiSelect == nil {
+		*multiSelect = &NotionPageCreateMultiSelectProp{
 			MultiSelect: make([]NotionMultiSelect, 0),
 		}
 	}
 
-	multiSelect.MultiSelect = append(multiSelect.MultiSelect, NotionMultiSelect{Name: option})
+	(*multiSelect).MultiSelect = append((*multiSelect).MultiSelect, NotionMultiSelect{Name: &option})
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddSelect(sel *NotionPageCreateSelectProp, option string) {
+func (builder *NotionCreateTaskRequestBuilder) AddSelect(sel **NotionPageCreateSelectProp, option string) {
 
-	if sel == nil {
-		sel = &NotionPageCreateSelectProp{}
+	if *sel == nil {
+		*sel = &NotionPageCreateSelectProp{}
 	}
 
-	sel.Select = NotionSelect{
+	(*sel).Select = NotionSelect{
 		Name: option,
 	}
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddStatus(status *NotionPageCreateStatusProp, option string) {
+func (builder *NotionCreateTaskRequestBuilder) AddStatus(status **NotionPageCreateStatusProp, option string) {
 
-	if status == nil {
-		status = &NotionPageCreateStatusProp{}
+	if *status == nil {
+		*status = &NotionPageCreateStatusProp{}
 	}
 
-	status.Status = NotionStatus{
+	(*status).Status = NotionStatus{
 		Name: option,
 	}
 }
 
-func (builder *NotionCreateTaskRequestBuilder) AddDate(sel *NotionPageCreateDateProp, date string) {
+func (builder *NotionCreateTaskRequestBuilder) AddDate(sel **NotionPageCreateDateProp, date string) {
 
-	if sel == nil {
-		sel = &NotionPageCreateDateProp{}
+	if *sel == nil {
+		*sel = &NotionPageCreateDateProp{}
 	}
 
-	sel.Date = NotionDatePropValue{
+	(*sel).Date = NotionDatePropValue{
 		Start: date,
+	}
+}
+
+func (builder *NotionCreateTaskRequestBuilder) AddTitle(name **NotionPageCreateNameProp, title string) {
+	if *name == nil {
+		*name = &NotionPageCreateNameProp{
+			Title: make([]NotionText, 1),
+		}
+	}
+
+	(*name).Title[0] = NotionText{
+		Text: NotionContent{
+			Content: title,
+		},
 	}
 }
 
@@ -389,6 +410,8 @@ func (builder *NotionCreateTaskRequestBuilder) Add(option string, val string) {
 
 	args := builder.Req
 
+	fmt.Println("args", args, option)
+
 	switch option {
 	case "db":
 		{
@@ -398,52 +421,47 @@ func (builder *NotionCreateTaskRequestBuilder) Add(option string, val string) {
 	case "categories":
 		{
 			//TODO: allow adding multiple
-			builder.AddRelation(builder.Req.Properties.Categories, val)
+			builder.AddRelation(&args.Properties.Categories, val)
+			fmt.Println("updated cats", args.Properties.Categories)
 		}
 	case "sub_category":
 		{
-			builder.AddRelation(builder.Req.Properties.SubCategory, val)
+			builder.AddRelation(&args.Properties.SubCategory, val)
 		}
 	case "status":
 		{
-			args.Properties.Status = &NotionPageCreateStatusProp{
-				Status: NotionStatus{
-					Name: val,
-				},
-			}
+			builder.AddStatus(&args.Properties.Status, val)
 		}
 
 	case "project":
 		{
-			builder.AddRelation(builder.Req.Properties.Project, val)
+			builder.AddRelation(&args.Properties.Project, val)
 		}
 	case "priority":
 		{
-			args.Properties.Priority = &NotionPageCreateSelectProp{
-				Select: NotionSelect{
-					Name: val,
-				},
-			}
+			builder.AddSelect(&args.Properties.Priority, val)
+			// args.Properties.Priority = &NotionPageCreateSelectProp{
+			// 	Select: NotionSelect{
+			// 		Name: val,
+			// 	},
+			// }
 		}
 	case "name":
 		{
 			//TODO: Turn into a add or Set Title
-			args.Properties.Name = &NotionPageCreateNameProp{
-				Title: make([]NotionText, 1)}
+			builder.AddTitle(&args.Properties.Name, val)
+			// args.Properties.Name = &NotionPageCreateNameProp{
+			// 	Title: make([]NotionText, 1)}
 
-			args.Properties.Name.Title[0].Text.Content = val
+			// args.Properties.Name.Title[0].Text.Content = val
 		}
 	case "start_date":
 		{
-			args.Properties.StartDate = &NotionPageCreateDateProp{
-				Date: NotionDatePropValue{
-					Start: val,
-				},
-			}
+			builder.AddDate(&args.Properties.StartDate, val)
 		}
 	case "tags":
 		{
-			builder.AddMultiSelect(args.Properties.Tags, val)
+			builder.AddMultiSelect(&args.Properties.Tags, val)
 		}
 	// TODO: Add In Resource Case
 	// case "resource": {

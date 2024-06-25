@@ -488,7 +488,7 @@ type NotionPageCreateMultiSelectProp struct {
 }
 
 type NotionMultiSelect struct {
-	Name string `json:"name"`
+	Name *string `json:"name"`
 }
 
 type NotionPageCreateRelationProp struct {
