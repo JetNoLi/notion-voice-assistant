@@ -1,4 +1,4 @@
-package services
+package notion
 
 import (
 	"encoding/json"
@@ -6,213 +6,10 @@ import (
 	"time"
 )
 
-type NotionTask struct {
-	Archived  bool        `json:"archived"`
-	Cover     interface{} `json:"cover"`
-	CreatedBy struct {
-		ID     string `json:"id"`
-		Object string `json:"object"`
-	} `json:"created_by"`
-	CreatedTime time.Time     `json:"created_time"`
-	Description []interface{} `json:"description"`
-	Icon        struct {
-		Emoji string `json:"emoji"`
-		Type  string `json:"type"`
-	} `json:"icon"`
-	ID           string `json:"id"`
-	InTrash      bool   `json:"in_trash"`
-	IsInline     bool   `json:"is_inline"`
-	LastEditedBy struct {
-		ID     string `json:"id"`
-		Object string `json:"object"`
-	} `json:"last_edited_by"`
-	LastEditedTime time.Time `json:"last_edited_time"`
-	Object         string    `json:"object"`
-	Parent         struct {
-		PageID string `json:"page_id"`
-		Type   string `json:"type"`
-	} `json:"parent"`
-	Properties struct {
-		Categories struct {
-			ID       string `json:"id"`
-			Name     string `json:"name"`
-			Relation struct {
-				DatabaseID   string `json:"database_id"`
-				DualProperty struct {
-					SyncedPropertyID   string `json:"synced_property_id"`
-					SyncedPropertyName string `json:"synced_property_name"`
-				} `json:"dual_property"`
-				Type string `json:"type"`
-			} `json:"relation"`
-			Type string `json:"type"`
-		} `json:"Categories"`
-		CompleteTask struct {
-			Button struct {
-			} `json:"button"`
-			ID   string `json:"id"`
-			Name string `json:"name"`
-			Type string `json:"type"`
-		} `json:"Complete Task"`
-		CreatedTime struct {
-			CreatedTime struct {
-			} `json:"created_time"`
-			ID   string `json:"id"`
-			Name string `json:"name"`
-			Type string `json:"type"`
-		} `json:"Created time"`
-		DurationInMinutes struct {
-			Formula struct {
-				Expression string `json:"expression"`
-			} `json:"formula"`
-			ID   string `json:"id"`
-			Name string `json:"name"`
-			Type string `json:"type"`
-		} `json:"Duration in Minutes"`
-		Goals struct {
-			ID       string `json:"id"`
-			Name     string `json:"name"`
-			Relation struct {
-				DatabaseID   string `json:"database_id"`
-				DualProperty struct {
-					SyncedPropertyID   string `json:"synced_property_id"`
-					SyncedPropertyName string `json:"synced_property_name"`
-				} `json:"dual_property"`
-				Type string `json:"type"`
-			} `json:"relation"`
-			Type string `json:"type"`
-		} `json:"Goals"`
-		LastEditedTime struct {
-			ID             string `json:"id"`
-			LastEditedTime struct {
-			} `json:"last_edited_time"`
-			Name string `json:"name"`
-			Type string `json:"type"`
-		} `json:"Last edited time"`
-		Name struct {
-			ID    string `json:"id"`
-			Name  string `json:"name"`
-			Title struct {
-			} `json:"title"`
-			Type string `json:"type"`
-		} `json:"Name"`
-		Note struct {
-			ID       string `json:"id"`
-			Name     string `json:"name"`
-			Relation struct {
-				DatabaseID   string `json:"database_id"`
-				DualProperty struct {
-					SyncedPropertyID   string `json:"synced_property_id"`
-					SyncedPropertyName string `json:"synced_property_name"`
-				} `json:"dual_property"`
-				Type string `json:"type"`
-			} `json:"relation"`
-			Type string `json:"type"`
-		} `json:"Note"`
-		Priority struct {
-			ID     string `json:"id"`
-			Name   string `json:"name"`
-			Select struct {
-				Options []struct {
-					Color       string      `json:"color"`
-					Description interface{} `json:"description"`
-					ID          string      `json:"id"`
-					Name        string      `json:"name"`
-				} `json:"options"`
-			} `json:"select"`
-			Type string `json:"type"`
-		} `json:"Priority"`
-		Project struct {
-			ID       string `json:"id"`
-			Name     string `json:"name"`
-			Relation struct {
-				DatabaseID   string `json:"database_id"`
-				DualProperty struct {
-					SyncedPropertyID   string `json:"synced_property_id"`
-					SyncedPropertyName string `json:"synced_property_name"`
-				} `json:"dual_property"`
-				Type string `json:"type"`
-			} `json:"relation"`
-			Type string `json:"type"`
-		} `json:"Project"`
-		Resource struct {
-			ID       string `json:"id"`
-			Name     string `json:"name"`
-			RichText struct {
-			} `json:"rich_text"`
-			Type string `json:"type"`
-		} `json:"Resource"`
-		StartDate struct {
-			Date struct {
-			} `json:"date"`
-			ID   string `json:"id"`
-			Name string `json:"name"`
-			Type string `json:"type"`
-		} `json:"Start Date"`
-		Status struct {
-			ID     string `json:"id"`
-			Name   string `json:"name"`
-			Status struct {
-				Groups []struct {
-					Color     string   `json:"color"`
-					ID        string   `json:"id"`
-					Name      string   `json:"name"`
-					OptionIds []string `json:"option_ids"`
-				} `json:"groups"`
-				Options []struct {
-					Color       string      `json:"color"`
-					Description interface{} `json:"description"`
-					ID          string      `json:"id"`
-					Name        string      `json:"name"`
-				} `json:"options"`
-			} `json:"status"`
-			Type string `json:"type"`
-		} `json:"Status"`
-		SubCategory struct {
-			ID       string `json:"id"`
-			Name     string `json:"name"`
-			Relation struct {
-				DatabaseID     string `json:"database_id"`
-				SingleProperty struct {
-				} `json:"single_property"`
-				Type string `json:"type"`
-			} `json:"relation"`
-			Type string `json:"type"`
-		} `json:"Sub Category"`
-		Tags struct {
-			ID          string `json:"id"`
-			MultiSelect struct {
-				Options []struct {
-					Color       string      `json:"color"`
-					Description interface{} `json:"description"`
-					ID          string      `json:"id"`
-					Name        string      `json:"name"`
-				} `json:"options"`
-			} `json:"multi_select"`
-			Name string `json:"name"`
-			Type string `json:"type"`
-		} `json:"Tags"`
-	} `json:"properties"`
-	PublicURL interface{} `json:"public_url"`
-	RequestID string      `json:"request_id"`
-	Title     []struct {
-		Annotations struct {
-			Bold          bool   `json:"bold"`
-			Code          bool   `json:"code"`
-			Color         string `json:"color"`
-			Italic        bool   `json:"italic"`
-			Strikethrough bool   `json:"strikethrough"`
-			Underline     bool   `json:"underline"`
-		} `json:"annotations"`
-		Href      interface{} `json:"href"`
-		PlainText string      `json:"plain_text"`
-		Text      struct {
-			Content string      `json:"content"`
-			Link    interface{} `json:"link"`
-		} `json:"text"`
-		Type string `json:"type"`
-	} `json:"title"`
-	URL string `json:"url"`
-}
+//TODO:
+// Create Concrete Types for DB
+// Break Function Down into Pieces
+// Figure out GPT Prompt
 
 type NotionDB struct {
 	CreatedBy struct {
@@ -275,7 +72,7 @@ type NotionDBProperty struct {
 	Value any    `json:"data"`
 }
 
-// UnmarshalJSON custom unmarshaling for NotionProperty to handle dynamic structures.
+// custom unmarshaling for NotionProperty to handle dynamic structures
 func (np *NotionDBProperty) UnmarshalJSON(data []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -377,17 +174,6 @@ type NotionDBSelectPropOptions struct {
 	Name        string      `json:"name"`
 }
 
-// * Categories - Relation
-// * Sub Category - Relation
-// * Goals - Relation
-// * Note - Relation
-// * Project - Relation
-// * Name - Title
-// * Priority - Select
-// * Start Date - Date
-// * Status - Status
-// * Tags - Multi Select
-
 // Skip On DB Property Types
 // * Resource - Rich Text v2 TODO:
 // * formula
@@ -420,7 +206,7 @@ type NotionPage[Props any] struct {
 	} `json:"parent"`
 	Archived   bool        `json:"archived"`
 	InTrash    bool        `json:"in_trash"`
-	Properties Props       `json:"properties"` //TODO: Add Props Typing
+	Properties Props       `json:"properties"`
 	URL        string      `json:"url"`
 	PublicURL  interface{} `json:"public_url"`
 }
@@ -461,10 +247,14 @@ type NotionCreatePageRequest[Props any] struct {
 	Properties Props `json:"properties"`
 }
 
-func (npr *NotionCreatePageRequest[NotionTaskDBPageProps]) ToJSON() ([]byte, error) {
+func (npr *NotionCreatePageRequest[any]) ToJSON() ([]byte, error) {
 	reqStr, err := json.Marshal(npr)
 
 	return reqStr, err
+}
+
+type NotionRequestInterface interface {
+	ToJSON() ([]byte, error)
 }
 
 type NotionPageCreateNameProp struct {

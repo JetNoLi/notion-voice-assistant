@@ -6,6 +6,7 @@ import (
 
 	"github.com/jetnoli/notion-voice-assistant/config/client"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/fetch"
+	"github.com/jetnoli/notion-voice-assistant/wrappers/notion"
 )
 
 func GetDatabases[T any]() (data T, err error) {
@@ -82,11 +83,7 @@ type ItemData struct {
 	SubCategory string
 }
 
-type NotionRequestInterface interface {
-	ToJSON() ([]byte, error)
-}
-
-func CreateDatabaseItem[Res any, Req NotionRequestInterface](databaseId string, itemData *Req) (item *Res, err error) {
+func CreateDatabaseItem[Res any, Req notion.NotionRequestInterface](databaseId string, itemData *Req) (item *Res, err error) {
 	body, err := (*itemData).ToJSON()
 
 	if err != nil {
@@ -99,12 +96,14 @@ func CreateDatabaseItem[Res any, Req NotionRequestInterface](databaseId string, 
 		return item, err
 	}
 
+	defer res.Body.Close()
+
 	err = json.NewDecoder(res.Body).Decode(&item)
 
 	return item, err
 }
 
-func Test(db NotionDB) {
+func Test(db notion.NotionDB) {
 	// Fetch Task DB
 	// Map DB to Object
 	// Fetch All Relations
@@ -136,18 +135,11 @@ type CreateDBOption struct {
 	Options []string
 }
 
-// - Create the Request With Each Possibility -> DONE
-// - Create a Properties Type for Creating a Task -> DONE
-// - Create a Task without Any Relations -> DONE
-// - Create a Task with a random Relation -> DONE
-// - Create a list of all options within selects, status and multi selects -> DONE
-// - Clean Up Types
-
 // - Use GPT with prompt, to figure out which relation makes the most sense for each property
 // - Use GPT with prompt, to figure out which value makes the most sense for each select
 // - Use GPT with prompt, to generate a title and description
 func GetAllRelatedPages(databaseId string) (any, error) {
-	db, err := GetDatabaseById[NotionDB](databaseId)
+	db, err := GetDatabaseById[notion.NotionDB](databaseId)
 
 	if err != nil {
 		return nil, err
@@ -160,7 +152,7 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 		//TODO: Make Switch Statement
 
 		if prop.Type == "relation" {
-			relation, ok := prop.Value.(*NotionDBRelationProp)
+			relation, ok := prop.Value.(*notion.NotionDBRelationProp)
 
 			if !ok {
 				fmt.Println("not ok", prop.Value)
@@ -171,13 +163,13 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 
 			fmt.Println("lloking up", id)
 
-			foreignDbPages, err := GetDatabasePagesById[NotionPage[map[string]any]](id)
+			foreignDbPages, err := GetDatabasePagesById[notion.NotionPage[map[string]any]](id)
 
 			if err != nil {
 				return nil, err
 			}
 
-			foreignDB, err := GetDatabaseById[NotionDB](id)
+			foreignDB, err := GetDatabaseById[notion.NotionDB](id)
 
 			if err != nil {
 				return nil, err
@@ -224,7 +216,7 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 				ID:       id,
 			}
 		} else if prop.Type == "multi_select" {
-			val, ok := prop.Value.(*NotionDBMultiSelectProp)
+			val, ok := prop.Value.(*notion.NotionDBMultiSelectProp)
 
 			if !ok {
 				fmt.Println("not ok", prop.Value)
@@ -242,7 +234,7 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 				Options: options,
 			}
 		} else if prop.Type == "status" {
-			val, ok := prop.Value.(*NotionDBStatusProp)
+			val, ok := prop.Value.(*notion.NotionDBStatusProp)
 
 			if !ok {
 				fmt.Println("not ok", prop.Value)
@@ -262,7 +254,7 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 			}
 
 		} else if prop.Type == "select" {
-			val, ok := prop.Value.(*NotionDBSelectProp)
+			val, ok := prop.Value.(*notion.NotionDBSelectProp)
 
 			if !ok {
 				fmt.Println("not ok", prop.Value)
@@ -280,16 +272,15 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 				Options: options,
 			}
 		} else if prop.Type == "date" {
-			_, ok := prop.Value.(*NotionDBDateProp)
+			_, ok := prop.Value.(*notion.NotionDBDateProp)
 
 			if !ok {
 				fmt.Println("not ok", prop.Value)
 				return nil, fmt.Errorf("error processing date")
 			}
 
-			// fmt.Println(val)
 		} else if prop.Type == "title" {
-			_, ok := prop.Value.(*NotionDBTitleProp)
+			_, ok := prop.Value.(*notion.NotionDBTitleProp)
 
 			if !ok {
 				fmt.Println("not ok", prop.Value)
@@ -301,7 +292,7 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 		}
 	}
 
-	req := NotionCreateTaskRequestBuilder{}
+	req := notion.NotionCreateTaskRequestBuilder{}
 
 	req.Add("db", db.ID)
 	req.Add("name", "Page with Builder")
@@ -326,164 +317,4 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 		ForeignProps any
 		Request      any
 	}{Response: resp, Options: dbOptions, ForeignProps: foreignDBProps, Request: string(jsonReq)}, nil
-}
-
-type NotionRequestBuilder[T any] struct {
-	Req  *T
-	errs []error
-}
-
-type NotionCreateTaskRequestBuilder struct {
-	Builder *NotionRequestBuilder[NotionCreateTaskRequest]
-}
-
-func (builder *NotionRequestBuilder[any]) AddRelation(relation **NotionPageCreateRelationProp, relationId string) {
-
-	if *relation == nil {
-		(*relation) = &NotionPageCreateRelationProp{
-			Relation: make([]NotionRelation, 0),
-		}
-	}
-
-	(*relation).Relation = append((*relation).Relation, NotionRelation{ID: relationId})
-	fmt.Println("add rleation", (*relation).Relation)
-}
-
-func (builder *NotionRequestBuilder[any]) AddMultiSelect(multiSelect **NotionPageCreateMultiSelectProp, option string) {
-
-	if *multiSelect == nil {
-		*multiSelect = &NotionPageCreateMultiSelectProp{
-			MultiSelect: make([]NotionMultiSelect, 0),
-		}
-	}
-
-	(*multiSelect).MultiSelect = append((*multiSelect).MultiSelect, NotionMultiSelect{Name: &option})
-}
-
-func (builder *NotionRequestBuilder[any]) AddSelect(sel **NotionPageCreateSelectProp, option string) {
-
-	if *sel == nil {
-		*sel = &NotionPageCreateSelectProp{}
-	}
-
-	(*sel).Select = NotionSelect{
-		Name: option,
-	}
-}
-
-func (builder *NotionRequestBuilder[any]) AddStatus(status **NotionPageCreateStatusProp, option string) {
-
-	if *status == nil {
-		*status = &NotionPageCreateStatusProp{}
-	}
-
-	(*status).Status = NotionStatus{
-		Name: option,
-	}
-}
-
-func (builder *NotionRequestBuilder[any]) AddDate(sel **NotionPageCreateDateProp, date string) {
-
-	if *sel == nil {
-		*sel = &NotionPageCreateDateProp{}
-	}
-
-	(*sel).Date = NotionDatePropValue{
-		Start: date,
-	}
-}
-
-func (builder *NotionRequestBuilder[any]) AddTitle(name **NotionPageCreateNameProp, title string) {
-	if *name == nil {
-		*name = &NotionPageCreateNameProp{
-			Title: make([]NotionText, 1),
-		}
-	}
-
-	(*name).Title[0] = NotionText{
-		Text: NotionContent{
-			Content: title,
-		},
-	}
-}
-
-func (nb *NotionCreateTaskRequestBuilder) Add(option string, val string) {
-
-	if nb.Builder == nil {
-		nb.Builder = &NotionRequestBuilder[NotionCreateTaskRequest]{}
-	}
-
-	if nb.Builder.Req == nil {
-		nb.Builder.Req = &NotionCreateTaskRequest{}
-	}
-
-	builder := nb.Builder
-	args := builder.Req
-
-	fmt.Println("args", args, option)
-
-	switch option {
-	case "db":
-		{
-			// TODO: assert Type Correctly
-			args.Parent.DatabaseID = val
-		}
-	case "categories":
-		{
-			//TODO: allow adding multiple
-			builder.AddRelation(&args.Properties.Categories, val)
-			fmt.Println("updated cats", args.Properties.Categories)
-		}
-	case "sub_category":
-		{
-			builder.AddRelation(&args.Properties.SubCategory, val)
-		}
-	case "status":
-		{
-			builder.AddStatus(&args.Properties.Status, val)
-		}
-
-	case "project":
-		{
-			builder.AddRelation(&args.Properties.Project, val)
-		}
-	case "priority":
-		{
-			builder.AddSelect(&args.Properties.Priority, val)
-			// args.Properties.Priority = &NotionPageCreateSelectProp{
-			// 	Select: NotionSelect{
-			// 		Name: val,
-			// 	},
-			// }
-		}
-	case "name":
-		{
-			//TODO: Turn into a add or Set Title
-			builder.AddTitle(&args.Properties.Name, val)
-			// args.Properties.Name = &NotionPageCreateNameProp{
-			// 	Title: make([]NotionText, 1)}
-
-			// args.Properties.Name.Title[0].Text.Content = val
-		}
-	case "start_date":
-		{
-			builder.AddDate(&args.Properties.StartDate, val)
-		}
-	case "tags":
-		{
-			builder.AddMultiSelect(&args.Properties.Tags, val)
-		}
-	// TODO: Add In Resource Case
-	// case "resource": {
-
-	// }
-	case "default":
-		{
-			builder.errs = append(builder.errs, fmt.Errorf("invalid option type provided %s, only the supported types are allowed:\n 'multi_select', 'status', 'relation', ', select', 'date', 'name'", option))
-		}
-	}
-}
-
-func (nb *NotionCreateTaskRequestBuilder) Error(option string, val string) []error {
-	return nb.Builder.errs
 }
