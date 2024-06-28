@@ -103,23 +103,6 @@ func CreateDatabaseItem[Res any, Req notion.NotionRequestInterface](databaseId s
 	return item, err
 }
 
-func Test(db notion.NotionDB) {
-	// Fetch Task DB
-	// Map DB to Object
-	// Fetch All Relations
-
-	// Get Audio
-	// Pass Info To Chat GPT
-	// Determine Best Fit for Each Field
-
-	// Create Item in DB
-	// Create a Type for Accepting Data
-	// Marshal Data to JSON
-	// Create Task
-
-	// Validate
-}
-
 // TODO: Make a struct { dbName, dbId, dbPageNames}
 type PageNameAndID struct {
 	Name string
@@ -135,160 +118,63 @@ type CreateDBOption struct {
 	Options []string
 }
 
+type NotionTaskDB = notion.NotionTaskDB
+
 // - Use GPT with prompt, to figure out which relation makes the most sense for each property
 // - Use GPT with prompt, to figure out which value makes the most sense for each select
 // - Use GPT with prompt, to generate a title and description
 func GetAllRelatedPages(databaseId string) (any, error) {
-	db, err := GetDatabaseById[notion.NotionDB](databaseId)
+	db, err := GetDatabaseById[NotionTaskDB](databaseId)
 
 	if err != nil {
 		return nil, err
 	}
 
-	foreignDBProps := make(map[string]RelatedDBPages)
+	relatedDBProps := make(map[string]RelatedDBPages)
 	dbOptions := make(map[string]CreateDBOption)
 
-	for _, prop := range db.Properties {
-		//TODO: Make Switch Statement
+	relatedDBs := []notion.NotionDBRelationProp{db.Properties.Categories, db.Properties.SubCategory, db.Properties.Project}
 
-		if prop.Type == "relation" {
-			relation, ok := prop.Value.(*notion.NotionDBRelationProp)
+	for _, relatedDB := range relatedDBs {
 
-			if !ok {
-				fmt.Println("not ok", prop.Value)
-				return nil, fmt.Errorf("error processing relation")
+		foreignDbPages, err := GetDatabasePagesById[notion.NotionPage[notion.NotionPageWithName]](relatedDB.Relation.DatabaseID)
+
+		if err != nil {
+			return nil, err
+		}
+
+		pageData := make([]PageNameAndID, 0)
+
+		for _, page := range foreignDbPages.Results {
+			pageData = append(pageData, PageNameAndID{
+				Name: page.Properties.Name.Title[0].Text.Content,
+				ID:   page.ID,
+			})
+		}
+
+		relatedDBProps[relatedDB.Name] = RelatedDBPages{
+			PageData: pageData,
+			ID:       db.ID,
+		}
+	}
+
+	for i, option := range append(append(db.Properties.Priority.Select.Options, db.Properties.Status.Status.Options...), db.Properties.Tags.MultiSelect.Options...) {
+
+		if i < len(db.Properties.Priority.Select.Options) {
+			dbOptions["Priority"] = CreateDBOption{
+				Type:    db.Properties.Priority.Type,
+				Options: append(dbOptions["Priority"].Options, option.Name),
 			}
-
-			id := relation.Relation.DatabaseID //TODO: Add error handling
-
-			fmt.Println("lloking up", id)
-
-			foreignDbPages, err := GetDatabasePagesById[notion.NotionPage[map[string]any]](id)
-
-			if err != nil {
-				return nil, err
+		} else if i < len(db.Properties.Status.Status.Options) {
+			dbOptions["Status"] = CreateDBOption{
+				Type:    db.Properties.Status.Type,
+				Options: append(dbOptions["Status"].Options, option.Name),
 			}
-
-			foreignDB, err := GetDatabaseById[notion.NotionDB](id)
-
-			if err != nil {
-				return nil, err
+		} else if i < len(db.Properties.Tags.MultiSelect.Options) {
+			dbOptions["Tags"] = CreateDBOption{
+				Type:    db.Properties.Tags.Type,
+				Options: append(dbOptions["Tags"].Options, option.Name),
 			}
-
-			pageData := make([]PageNameAndID, 0)
-
-			for _, page := range foreignDbPages.Results {
-				for key, prop := range page.Properties {
-					if key == "Name" {
-						val, ok := prop.(map[string]any)
-
-						if !ok {
-							return nil, fmt.Errorf("invalid conversion on prop in page")
-						}
-
-						if val["title"] == nil {
-							continue
-						}
-
-						titles, ok := val["title"].([]any)
-
-						if !ok {
-							return nil, fmt.Errorf("invalid conversion on prop in titles")
-						}
-
-						title, ok := titles[0].(map[string]any)
-
-						if !ok {
-							return nil, fmt.Errorf("invalid conversion on prop in title")
-						}
-
-						pageData = append(pageData, PageNameAndID{
-							Name: title["plain_text"].(string),
-							ID:   page.ID,
-						})
-					}
-				}
-
-			}
-
-			foreignDBProps[foreignDB.Title[0].PlainText] = RelatedDBPages{
-				PageData: pageData,
-				ID:       id,
-			}
-		} else if prop.Type == "multi_select" {
-			val, ok := prop.Value.(*notion.NotionDBMultiSelectProp)
-
-			if !ok {
-				fmt.Println("not ok", prop.Value)
-				return nil, fmt.Errorf("error processing multi select")
-			}
-
-			options := make([]string, len(val.MultiSelect.Options))
-
-			for i, option := range val.MultiSelect.Options {
-				options[i] = option.Name
-			}
-
-			dbOptions[prop.Name] = CreateDBOption{
-				Type:    prop.Type,
-				Options: options,
-			}
-		} else if prop.Type == "status" {
-			val, ok := prop.Value.(*notion.NotionDBStatusProp)
-
-			if !ok {
-				fmt.Println("not ok", prop.Value)
-				return nil, fmt.Errorf("error processing status")
-			}
-
-			// TODO: Implement Map function
-			options := make([]string, len(val.Status.Options))
-
-			for i, option := range val.Status.Options {
-				options[i] = option.Name
-			}
-
-			dbOptions[prop.Name] = CreateDBOption{
-				Type:    prop.Type,
-				Options: options,
-			}
-
-		} else if prop.Type == "select" {
-			val, ok := prop.Value.(*notion.NotionDBSelectProp)
-
-			if !ok {
-				fmt.Println("not ok", prop.Value)
-				return nil, fmt.Errorf("error processing select")
-			}
-
-			options := make([]string, len(val.Select.Options))
-
-			for i, option := range val.Select.Options {
-				options[i] = option.Name
-			}
-
-			dbOptions[prop.Name] = CreateDBOption{
-				Type:    prop.Type,
-				Options: options,
-			}
-		} else if prop.Type == "date" {
-			_, ok := prop.Value.(*notion.NotionDBDateProp)
-
-			if !ok {
-				fmt.Println("not ok", prop.Value)
-				return nil, fmt.Errorf("error processing date")
-			}
-
-		} else if prop.Type == "title" {
-			_, ok := prop.Value.(*notion.NotionDBTitleProp)
-
-			if !ok {
-				fmt.Println("not ok", prop.Value)
-				return nil, fmt.Errorf("error processing title")
-			}
-
-		} else {
-			fmt.Println("skip", prop.Type)
 		}
 	}
 
@@ -296,7 +182,7 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 
 	req.Add("db", db.ID)
 	req.Add("name", "Page with Builder")
-	req.Add("categories", foreignDBProps["Categories"].PageData[0].ID)
+	req.Add("categories", relatedDBProps["Categories"].PageData[0].ID)
 	req.Add("status", dbOptions["Status"].Options[0])
 
 	resp, err := CreateDatabaseItem[any](databaseId, &req.Builder.Req)
@@ -316,5 +202,5 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 		Options      any
 		ForeignProps any
 		Request      any
-	}{Response: resp, Options: dbOptions, ForeignProps: foreignDBProps, Request: string(jsonReq)}, nil
+	}{Response: resp, Options: dbOptions, ForeignProps: relatedDBProps, Request: string(jsonReq)}, nil
 }

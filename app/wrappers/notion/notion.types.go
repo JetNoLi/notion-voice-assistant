@@ -2,7 +2,6 @@ package notion
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -11,7 +10,7 @@ import (
 // Break Function Down into Pieces
 // Figure out GPT Prompt
 
-type NotionDB struct {
+type NotionDB[Props any] struct {
 	CreatedBy struct {
 		ID     string `json:"id"`
 		Object string `json:"object"`
@@ -26,20 +25,20 @@ type NotionDB struct {
 		Type  string `json:"type"`
 	} `json:"icon"`
 
-	Archived       bool                        `json:"archived"`
-	Cover          interface{}                 `json:"cover"`
-	Description    []interface{}               `json:"description"`
-	ID             string                      `json:"id"`
-	InTrash        bool                        `json:"in_trash"`
-	IsInline       bool                        `json:"is_inline"`
-	LastEditedTime time.Time                   `json:"last_edited_time"`
-	Object         string                      `json:"object"`
-	Parent         NotionDBParent              `json:"parent"`
-	Properties     map[string]NotionDBProperty `json:"properties"`
-	PublicURL      interface{}                 `json:"public_url"`
-	RequestID      string                      `json:"request_id"`
-	Title          []NotionTitleValue          `json:"title"`
-	URL            string                      `json:"url"`
+	Archived       bool               `json:"archived"`
+	Cover          interface{}        `json:"cover"`
+	Description    []interface{}      `json:"description"`
+	ID             string             `json:"id"`
+	InTrash        bool               `json:"in_trash"`
+	IsInline       bool               `json:"is_inline"`
+	LastEditedTime time.Time          `json:"last_edited_time"`
+	Object         string             `json:"object"`
+	Parent         NotionDBParent     `json:"parent"`
+	Properties     Props              `json:"properties"`
+	PublicURL      interface{}        `json:"public_url"`
+	RequestID      string             `json:"request_id"`
+	Title          []NotionTitleValue `json:"title"`
+	URL            string             `json:"url"`
 }
 
 type NotionTitleValue struct {
@@ -65,57 +64,28 @@ type NotionDBParent struct {
 	Type   string `json:"type"`
 }
 
-type NotionDBProperty struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Type  string `json:"type"`
-	Value any    `json:"data"`
+type NotionTaskDBProps struct {
+	Categories  NotionDBRelationProp    `json:"Categories"`
+	Name        NotionDBTitleProp       `json:"Name"`
+	Note        NotionDBRelationProp    `json:"Note"`
+	Priority    NotionDBSelectProp      `json:"Priority"`
+	Project     NotionDBRelationProp    `json:"Project"`
+	Resource    NotionDBRichTextProp    `json:"Resource"`
+	Status      NotionDBStatusProp      `json:"Status"`
+	SubCategory NotionDBRelationProp    `json:"Sub Category"`
+	Tags        NotionDBMultiSelectProp `json:"Tags"`
 }
 
-// custom unmarshaling for NotionProperty to handle dynamic structures
-func (np *NotionDBProperty) UnmarshalJSON(data []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	np.ID = raw["id"].(string)
-	np.Name = raw["name"].(string)
-	np.Type = raw["type"].(string)
-
-	var val any = nil
-
-	// Store the raw value in the Value field for further processing
-	if np.Type == "multi_select" {
-		val = &NotionDBMultiSelectProp{}
-	} else if np.Type == "status" {
-		val = &NotionDBStatusProp{}
-	} else if np.Type == "select" {
-		val = &NotionDBSelectProp{}
-	} else if np.Type == "relation" {
-		val = &NotionDBRelationProp{}
-	} else if np.Type == "date" {
-		val = &NotionDBDateProp{}
-	} else if np.Type == "title" {
-		val = &NotionDBTitleProp{}
-	}
-
-	if val == nil {
-		fmt.Println("skipping", np.Type)
-		np.Value = raw[np.Type]
-		return nil
-	}
-
-	if err := json.Unmarshal(data, val); err != nil {
-		fmt.Println("failed type assertion status", err.Error())
-		np.Value = raw[np.Type]
-		return err
-	}
-
-	np.Value = val
-	return nil
+type NotionPageWithName struct {
+	Name NotionPageCreateNameProp `json:"Name"`
 }
+
+type NotionTaskDB = NotionDB[NotionTaskDBProps]
 
 type NotionDBRelationProp struct {
+	ID       string                    `json:"id"`
+	Name     string                    `json:"name"`
+	Type     string                    `json:"type"`
 	Relation NotionDBRelationPropValue `json:"relation"`
 }
 
@@ -130,6 +100,9 @@ type NotionDBRelationPropValue struct {
 
 type NotionDBDateProp struct {
 	Date NotionDatePropValue
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 type NotionDatePropValue struct {
@@ -139,10 +112,16 @@ type NotionDatePropValue struct {
 }
 
 type NotionDBMultiSelectProp struct {
+	ID          string              `json:"id"`
+	Name        string              `json:"name"`
+	Type        string              `json:"type"`
 	MultiSelect NotionDBSelectValue `json:"multi_select"`
 }
 
 type NotionDBSelectProp struct {
+	ID     string              `json:"id"`
+	Name   string              `json:"name"`
+	Type   string              `json:"type"`
 	Select NotionDBSelectValue `json:"select"`
 }
 
@@ -156,6 +135,9 @@ type NotionDBTitleProp struct {
 type NotionDBRichTextProp struct{}
 
 type NotionDBStatusProp struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Type   string `json:"type"`
 	Status struct {
 		Groups []struct {
 			Color     string   `json:"color"`
@@ -214,21 +196,6 @@ type NotionPage[Props any] struct {
 type NotionPageRelationPropValue struct {
 	ID string `json:"id"`
 }
-
-type NotionPageProp[T any] struct {
-	ID             string      `json:"id"`
-	Type           string      `json:"type"`
-	HasMore        bool        `json:"has_more"`
-	Value          T           `json:"data"`
-	NextCursor     interface{} `json:"next_cursor"`
-	PageOrDatabase struct {
-	} `json:"page_or_database"`
-	DeveloperSurvey string `json:"developer_survey"`
-	RequestID       string `json:"request_id"`
-}
-
-type NotionPageRelationProp = NotionPageProp[[]NotionPageRelationPropValue]
-type NotionPageTitleProp = NotionPageProp[[]NotionTitleValue]
 
 type NotionCreateTaskRequest = NotionCreatePageRequest[NotionTaskDBPageProps]
 
