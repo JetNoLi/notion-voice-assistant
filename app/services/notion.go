@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/jetnoli/notion-voice-assistant/config/client"
 	"github.com/jetnoli/notion-voice-assistant/wrappers/fetch"
@@ -83,8 +84,10 @@ type ItemData struct {
 	SubCategory string
 }
 
-func CreateDatabaseItem[Res any, Req notion.NotionRequestInterface](databaseId string, itemData *Req) (item *Res, err error) {
+func CreateDatabaseItem[Res any, Req notion.RequestInterface](databaseId string, itemData *Req) (item *Res, err error) {
 	body, err := (*itemData).ToJSON()
+
+	fmt.Printf("my data \n %#v\n", *itemData)
 
 	if err != nil {
 		return item, err
@@ -113,17 +116,20 @@ type RelatedDBPages struct {
 	PageData []PageNameAndID
 }
 
-type CreateDBOption struct {
+type NotionDBOption struct {
 	Type    string
 	Options []string
 }
 
-type NotionTaskDB = notion.NotionTaskDB
+type NotionTaskDB = notion.TaskDB
+type NotionTaskPage = notion.Page[notion.TaskDBPageProps]
 
-// - Use GPT with prompt, to figure out which relation makes the most sense for each property
-// - Use GPT with prompt, to figure out which value makes the most sense for each select
-// - Use GPT with prompt, to generate a title and description
-func GetAllRelatedPages(databaseId string) (any, error) {
+type NotionRelatedPageContent struct {
+	Options      map[string]NotionDBOption
+	ForeignProps map[string]RelatedDBPages
+}
+
+func GetAllRelatedPages(databaseId string) (*NotionRelatedPageContent, error) {
 	db, err := GetDatabaseById[NotionTaskDB](databaseId)
 
 	if err != nil {
@@ -131,13 +137,13 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 	}
 
 	relatedDBProps := make(map[string]RelatedDBPages)
-	dbOptions := make(map[string]CreateDBOption)
+	dbOptions := make(map[string]NotionDBOption)
 
-	relatedDBs := []notion.NotionDBRelationProp{db.Properties.Categories, db.Properties.SubCategory, db.Properties.Project}
+	relatedDBs := []notion.DBRelationProp{db.Properties.Categories, db.Properties.SubCategory, db.Properties.Project}
 
 	for _, relatedDB := range relatedDBs {
 
-		foreignDbPages, err := GetDatabasePagesById[notion.NotionPage[notion.NotionPageWithName]](relatedDB.Relation.DatabaseID)
+		foreignDbPages, err := GetDatabasePagesById[notion.Page[notion.PageWithName]](relatedDB.Relation.DatabaseID)
 
 		if err != nil {
 			return nil, err
@@ -161,46 +167,115 @@ func GetAllRelatedPages(databaseId string) (any, error) {
 	for i, option := range append(append(db.Properties.Priority.Select.Options, db.Properties.Status.Status.Options...), db.Properties.Tags.MultiSelect.Options...) {
 
 		if i < len(db.Properties.Priority.Select.Options) {
-			dbOptions["Priority"] = CreateDBOption{
+			dbOptions["Priority"] = NotionDBOption{
 				Type:    db.Properties.Priority.Type,
 				Options: append(dbOptions["Priority"].Options, option.Name),
 			}
 		} else if i < len(db.Properties.Status.Status.Options) {
-			dbOptions["Status"] = CreateDBOption{
+			dbOptions["Status"] = NotionDBOption{
 				Type:    db.Properties.Status.Type,
 				Options: append(dbOptions["Status"].Options, option.Name),
 			}
 		} else if i < len(db.Properties.Tags.MultiSelect.Options) {
-			dbOptions["Tags"] = CreateDBOption{
+			dbOptions["Tags"] = NotionDBOption{
 				Type:    db.Properties.Tags.Type,
 				Options: append(dbOptions["Tags"].Options, option.Name),
 			}
 		}
 	}
 
-	req := notion.NotionCreateTaskRequestBuilder{}
+	return &NotionRelatedPageContent{Options: dbOptions, ForeignProps: relatedDBProps}, nil
+}
 
-	req.Add("db", db.ID)
-	req.Add("name", "Page with Builder")
-	req.Add("categories", relatedDBProps["Categories"].PageData[0].ID)
-	req.Add("status", dbOptions["Status"].Options[0])
+// - Use GPT with prompt, to figure out which relation makes the most sense for each property
+// - Use GPT with prompt, to figure out which value makes the most sense for each select
+// - Use GPT with prompt, to generate a title and description
+type TaskRelation struct {
+	Name   string `json:"Name"`
+	PageID string `json:"PageID"`
+	DBID   string `json:"DBID"`
+}
 
-	resp, err := CreateDatabaseItem[any](databaseId, &req.Builder.Req)
+type TaskData struct {
+	Name      string                    `json:"name"`
+	Options   map[string]any            `json:"options"`   // string | []string
+	Relations map[string][]TaskRelation `json:"relations"` // TaskRelation | []TaskRelation
+}
+
+func CreatePageFromRelatedContent(databaseId string, relatedContent *NotionRelatedPageContent, prompt string) (any, error) {
+	data, err := Assist(notion.CreatePrompt(notion.CreatePromptArgs{
+		Prompt:       prompt,
+		DBFields:     notion.TaskDBPageProps{},
+		DBRelations:  relatedContent.ForeignProps,
+		Options:      relatedContent.Options,
+		ReturnStruct: TaskData{},
+	}))
 
 	if err != nil {
 		return nil, err
 	}
 
-	jsonReq, err := req.Builder.Req.ToJSON()
+	fmt.Println("starting marshal")
+	taskData := &TaskData{}
 
-	if err != nil {
-		fmt.Println("could not parse to JSON")
+	if err = json.Unmarshal([]byte(data.Choices[0].Message.Content), taskData); err != nil {
+		return nil, fmt.Errorf("error converting %s : %#v", err.Error(), data.Choices[0].Message.Content)
 	}
 
-	return struct {
-		Response     any
-		Options      any
-		ForeignProps any
-		Request      any
-	}{Response: resp, Options: dbOptions, ForeignProps: relatedDBProps, Request: string(jsonReq)}, nil
+	req := notion.CreateTaskRequestBuilder{}
+
+	req.Add("db", databaseId)
+	req.Add("name", taskData.Name)
+
+	for key, value := range taskData.Options {
+		fmt.Println("adding", key, value)
+		val, ok := value.(string)
+
+		if ok {
+			req.Add(strings.ToLower(key), val)
+			continue
+		}
+
+		vals, ok := value.([]any)
+
+		if !ok {
+			return nil, fmt.Errorf("invalid format for key "+key+"with val %#v", value)
+		}
+
+		for _, val := range vals {
+			str, ok := val.(string)
+
+			if ok {
+				req.Add(strings.ToLower(key), str)
+				continue
+			}
+
+			return nil, fmt.Errorf("error converting option to string in multiselect %v, %v", val, vals)
+		}
+
+	}
+
+	for key, value := range taskData.Relations {
+		fmt.Printf("adding %v %#v\n", key, value)
+
+		for _, val := range value {
+			req.Add(strings.ToLower(key), val.PageID)
+		}
+
+	}
+
+	reqJson, err := req.Request()
+
+	if err != nil {
+		fmt.Println("error with reqest", err.Error())
+	}
+
+	resp, err := CreateDatabaseItem[any](databaseId, &reqJson)
+
+	if err != nil {
+		fmt.Println("error creating task", err.Error(), reqJson.Properties)
+	}
+
+	return resp, err
+
 }

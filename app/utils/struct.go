@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -55,4 +56,15 @@ func StructToMap(v any) (mappedStruct map[string]any, err error) {
 	}
 
 	return mappedStruct, nil
+}
+
+func PrintStructType[T any](val T) string {
+	t := reflect.TypeOf(val)
+	str := ""
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		str += fmt.Sprintf("  %s (%s)\n", field.Name, field.Type)
+	}
+
+	return str
 }

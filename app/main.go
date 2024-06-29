@@ -43,8 +43,8 @@ func main() {
 
 	server := http.Server{
 		Addr:         ":" + config.Port,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 60 * time.Second,
 		Handler:      router.Mux,
 	}
 

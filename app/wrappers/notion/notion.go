@@ -5,93 +5,92 @@ import "fmt"
 //TODO: Make it completely Generic
 // Move DB Logic here
 
-type NotionRequestBuilder[T any] struct {
+type RequestBuilder[T any] struct {
 	Req  *T
 	errs []error
 }
 
-func (builder *NotionRequestBuilder[any]) AddRelation(relation **NotionPageCreateRelationProp, relationId string) {
+func (builder *RequestBuilder[any]) AddRelation(relation **PageCreateRelationProp, relationId string) {
 
 	if *relation == nil {
-		(*relation) = &NotionPageCreateRelationProp{
-			Relation: make([]NotionRelation, 0),
+		(*relation) = &PageCreateRelationProp{
+			Relation: make([]Relation, 0),
 		}
 	}
 
-	(*relation).Relation = append((*relation).Relation, NotionRelation{ID: relationId})
-	fmt.Println("add rleation", (*relation).Relation)
+	(*relation).Relation = append((*relation).Relation, Relation{ID: relationId})
 }
 
-func (builder *NotionRequestBuilder[any]) AddMultiSelect(multiSelect **NotionPageCreateMultiSelectProp, option string) {
+func (builder *RequestBuilder[any]) AddMultiSelect(multiSelect **PageCreateMultiSelectProp, option string) {
 
 	if *multiSelect == nil {
-		*multiSelect = &NotionPageCreateMultiSelectProp{
-			MultiSelect: make([]NotionMultiSelect, 0),
+		*multiSelect = &PageCreateMultiSelectProp{
+			MultiSelect: make([]MultiSelect, 0),
 		}
 	}
 
-	(*multiSelect).MultiSelect = append((*multiSelect).MultiSelect, NotionMultiSelect{Name: &option})
+	(*multiSelect).MultiSelect = append((*multiSelect).MultiSelect, MultiSelect{Name: &option})
 }
 
-func (builder *NotionRequestBuilder[any]) AddSelect(sel **NotionPageCreateSelectProp, option string) {
+func (builder *RequestBuilder[any]) AddSelect(sel **PageCreateSelectProp, option string) {
 
 	if *sel == nil {
-		*sel = &NotionPageCreateSelectProp{}
+		*sel = &PageCreateSelectProp{}
 	}
 
-	(*sel).Select = NotionSelect{
+	(*sel).Select = Select{
 		Name: option,
 	}
 }
 
-func (builder *NotionRequestBuilder[any]) AddStatus(status **NotionPageCreateStatusProp, option string) {
+func (builder *RequestBuilder[any]) AddStatus(status **PageCreateStatusProp, option string) {
 
 	if *status == nil {
-		*status = &NotionPageCreateStatusProp{}
+		*status = &PageCreateStatusProp{}
 	}
 
-	(*status).Status = NotionStatus{
+	(*status).Status = Status{
 		Name: option,
 	}
 }
 
-func (builder *NotionRequestBuilder[any]) AddDate(sel **NotionPageCreateDateProp, date string) {
+func (builder *RequestBuilder[any]) AddDate(sel **PageCreateDateProp, date string) {
 
 	if *sel == nil {
-		*sel = &NotionPageCreateDateProp{}
+		*sel = &PageCreateDateProp{}
 	}
 
-	(*sel).Date = NotionDatePropValue{
+	(*sel).Date = DatePropValue{
 		Start: date,
 	}
 }
 
-func (builder *NotionRequestBuilder[any]) AddTitle(name **NotionPageCreateNameProp, title string) {
+func (builder *RequestBuilder[any]) AddTitle(name **PageCreateNameProp, title string) {
 	if *name == nil {
-		*name = &NotionPageCreateNameProp{
-			Title: make([]NotionText, 1),
+		*name = &PageCreateNameProp{
+			Title: make([]Text, 1),
 		}
 	}
 
-	(*name).Title[0] = NotionText{
-		Text: NotionContent{
+	(*name).Title[0] = Text{
+		Text: Content{
 			Content: title,
 		},
 	}
 }
 
-type NotionCreateTaskRequestBuilder struct {
-	Builder *NotionRequestBuilder[NotionCreateTaskRequest]
+type CreateTaskRequestBuilder struct {
+	Builder *RequestBuilder[CreateTaskRequest]
 }
 
-func (nb *NotionCreateTaskRequestBuilder) Add(option string, val string) {
+func (nb *CreateTaskRequestBuilder) Add(option string, val string) {
 
 	if nb.Builder == nil {
-		nb.Builder = &NotionRequestBuilder[NotionCreateTaskRequest]{}
+		nb.Builder = &RequestBuilder[CreateTaskRequest]{}
 	}
 
 	if nb.Builder.Req == nil {
-		nb.Builder.Req = &NotionCreateTaskRequest{}
+		nb.Builder.Req = &CreateTaskRequest{}
 	}
 
 	builder := nb.Builder
@@ -141,13 +140,14 @@ func (nb *NotionCreateTaskRequestBuilder) Add(option string, val string) {
 	// }
 	case "default":
 		{
+			fmt.Println("error in builder", option, val)
 			builder.errs = append(builder.errs, fmt.Errorf("invalid option type provided %s, only the supported types are allowed:\n 'db', 'categories', 'sub_category', 'status', 'project', 'priority', 'name', 'start_date', 'tags'", option))
 		}
 	}
 
 }
 
-func (nb *NotionCreateTaskRequestBuilder) Error() error {
+func (nb *CreateTaskRequestBuilder) Error() error {
 	if len(nb.Builder.errs) == 0 {
 		return nil
 	}
@@ -165,7 +165,7 @@ func (nb *NotionCreateTaskRequestBuilder) Error() error {
 	return fmt.Errorf(errMsg)
 }
 
-func (nb *NotionCreateTaskRequestBuilder) Request() (*NotionCreateTaskRequest, error) {
+func (nb *CreateTaskRequestBuilder) Request() (*CreateTaskRequest, error) {
 	err := nb.Error()
 
 	if err != nil {
