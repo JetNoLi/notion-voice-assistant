@@ -67,3 +67,27 @@ func Transcribe(w http.ResponseWriter, r *http.Request) {
 			}`, err.Error())))
 	}
 }
+
+func TranscribeResponse(r *http.Request) (services.TranscriptionResponse, error) {
+
+	if err := r.ParseMultipartForm(config.MAX_FILE_SIZE_IN_MEMORY); err != nil {
+		return services.TranscriptionResponse{}, err
+	}
+
+	file, header, err := r.FormFile("audio_file")
+
+	if err != nil {
+		return services.TranscriptionResponse{}, err
+	}
+
+	defer file.Close()
+
+	multiPartFileBuffer, contentType, err := services.CreateBufferFromFormFile(file, *header)
+
+	if err != nil {
+		return services.TranscriptionResponse{}, err
+	}
+
+	return services.TranscribeFile(&multiPartFileBuffer, contentType)
+
+}

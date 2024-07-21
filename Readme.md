@@ -3,6 +3,8 @@ TODO: Add Readme
 * Replace All Inline Int Error Codes with http Enum
 * Cleanup Unnessary Returns and ifs
 * All Errors should be Lowercase
+* Include a way to start multiple terminal sessions at once
+* 
 
 * Improve Env Var Handling
 * CSS Variables / Scss
@@ -15,3 +17,12 @@ TODO: Add Readme
 * Improve Temp File handling in whisper api
 * Improve Error Handling using http.Error
 * How to Document Go Code (OpenAPI and JS Doc Equivalent?)
+
+
+## Notion Service
+
+### Step 1
+* Fetch Tasks DB
+* Do a lookup on all relations to fetch all their pages
+* Create a map of DB Name to their child page names
+

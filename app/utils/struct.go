@@ -23,7 +23,11 @@ func GetKeysFromStruct(v any) (keys []string, err error) {
 }
 
 func StructToMap(v any) (mappedStruct map[string]any, err error) {
-	fmt.Println("in map to struct")
+	// Check if v is already a map and return it if true
+	if mappedStruct, ok := v.(map[string]any); ok {
+		return mappedStruct, nil
+	}
+
 	mappedStruct = make(map[string]any)
 
 	val := reflect.ValueOf(v)
@@ -52,4 +56,15 @@ func StructToMap(v any) (mappedStruct map[string]any, err error) {
 	}
 
 	return mappedStruct, nil
+}
+
+func PrintStructType[T any](val T) string {
+	t := reflect.TypeOf(val)
+	str := ""
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		str += fmt.Sprintf("  %s (%s)\n", field.Name, field.Type)
+	}
+
+	return str
 }

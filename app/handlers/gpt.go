@@ -36,7 +36,22 @@ func Assist(w http.ResponseWriter, r *http.Request) {
 		}`, err.Error())))
 	}
 
+	taskData := &services.TaskData{}
+
+	if err = json.Unmarshal([]byte(data.Choices[0].Message.Content), taskData); err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf(`{
+			"title": "Error: Bad Request",
+			"message": "%s"
+		}`, err.Error())))
+	}
+
 	w.Header().Add("Content-Type", "application/json")
 
-	w.Write([]byte(data))
+	err = json.NewEncoder(w).Encode(&taskData)
+
+	if err != nil {
+		http.Error(w, "Error Returning Data: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

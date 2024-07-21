@@ -10,8 +10,22 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/jetnoli/notion-voice-assistant/utils"
-	"github.com/jetnoli/notion-voice-assistant/wrappers/serve"
 )
+
+// TODO: REMOVE AND REPLACE WITH BUILT IN FUNC FROM HTTP LIB
+func ReadData(path string) (data []byte, err error) {
+	absPath, err := filepath.Abs(path)
+
+	if err != nil {
+		return data, err
+	}
+
+	data, err = os.ReadFile(absPath)
+
+	return data, err
+}
+
+// END
 
 type RouterOptions struct {
 	ExactPathsOnly        bool // Appends the {$} for all paths in router
@@ -177,7 +191,7 @@ func (router Router) Serve(path string, filePath string, options *RouteOptions) 
 	router.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		data, err := serve.ReadData(filePath)
+		data, err := ReadData(filePath)
 
 		if err != nil {
 			http.Error(w, "Error Reading file:\n"+err.Error(), http.StatusInternalServerError)
@@ -186,7 +200,6 @@ func (router Router) Serve(path string, filePath string, options *RouteOptions) 
 
 		w.Header().Set("Content-Type", http.DetectContentType(data))
 
-		//TODO: Error Handling
 		_, err = w.Write(data)
 
 		if err != nil {
@@ -204,6 +217,7 @@ type ServeDirOptions struct {
 
 // Serves all html in given directory relative to app
 // Include trailing slash in dir name
+// TODO: rewrite with built in http functionality
 func (router Router) ServeDir(baseUrlPath string, dirPath string, options *ServeDirOptions) {
 	absPath, err := filepath.Abs(dirPath)
 

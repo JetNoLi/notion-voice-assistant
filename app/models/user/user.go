@@ -155,8 +155,6 @@ func DeleteAll() error {
 func GetByEmail(email string) (user *User, err error) {
 	user = &User{}
 
-	fmt.Println("Query", email)
-
 	query := db.QueryRow(fmt.Sprintf(`
 		select * from users
 		where email='%s'

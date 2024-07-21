@@ -7,6 +7,9 @@ COPY .  .
 COPY ./.env /app/
 
 RUN go install github.com/a-h/templ/cmd/templ@latest
+RUN go get github.com/jackc/puddle/v2@v2.2.1
+RUN go get github.com/a-h/templ/runtime
+RUN go mod tidy
 RUN templ generate
 
 # Copy and filter CSS files from view/
